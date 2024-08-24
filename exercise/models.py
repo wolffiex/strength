@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.exceptions import ValidationError
 
 
 class Exercise(models.Model):
@@ -10,7 +11,7 @@ class Exercise(models.Model):
     )
     name = models.CharField(max_length=255)
     category = models.CharField(max_length=4, choices=CATEGORIES)
-    note = models.TextField
+    note = models.TextField()
 
 
 class Set(models.Model):
@@ -24,9 +25,9 @@ class Workout(models.Model):
     date = models.DateField()
 
 
-class ActualSet(models.Model):
+class WorkoutSet(models.Model):
     workout = models.ForeignKey(
-        Workout, on_delete=models.CASCADE, related_name="actual_sets"
+        Workout, on_delete=models.CASCADE, related_name="workout_sets"
     )
     completed = models.BooleanField(null=False, blank=False)
     planned = models.ForeignKey(
@@ -36,11 +37,8 @@ class ActualSet(models.Model):
         Set, on_delete=models.CASCADE, null=True, blank=True, related_name="actual_sets"
     )
 
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=["planned", "actual"],
-                condition=models.Q(planned__exercise=models.F("actual__exercise")),
-                name="matching_exercise_constraint",
+    def clean(self):
+        if self.actual is not None and self.planned.exercise != self.actual.exercise:
+            raise ValidationError(
+                "Planned exercise and actual exercise must match if actual exercise is provided."
             )
-        ]
