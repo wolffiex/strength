@@ -11,34 +11,75 @@ class Exercise(models.Model):
     )
     name = models.CharField(max_length=255)
     category = models.CharField(max_length=4, choices=CATEGORIES)
-    note = models.TextField()
+    note = models.TextField(blank=True)
 
 
 class Set(models.Model):
-    exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
-    reps = models.PositiveIntegerField()
+    reps = models.PositiveIntegerField(null=True, blank=True)
+    seconds = models.PositiveIntegerField(null=True, blank=True)
     pounds = models.PositiveIntegerField(null=True, blank=True)
-    note = models.CharField(max_length=100)
+    resistance = models.CharField(blank=True, max_length=255)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    models.Q(reps__isnull=False, seconds__isnull=True)
+                    | models.Q(reps__isnull=True, seconds__isnull=False)
+                ),
+                name="reps_seconds_xor",
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(pounds__isnull=False, resistance__exact="")
+                    | models.Q(pounds__isnull=True, resistance__gt="")
+                ),
+                name="pounds_resistance_xor",
+            ),
+        ]
 
 
 class Workout(models.Model):
     date = models.DateField()
 
 
-class WorkoutSet(models.Model):
+class WorkoutExercise(models.Model):
     workout = models.ForeignKey(
-        Workout, on_delete=models.CASCADE, related_name="workout_sets"
+        Workout, on_delete=models.CASCADE, related_name="exercises"
     )
-    completed = models.BooleanField(null=False, blank=False)
+    exercise = models.ForeignKey(
+        Exercise,
+        on_delete=models.CASCADE,
+    )
+    order = models.PositiveIntegerField(blank=True, null=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["workout", "exercise"], name="unique_workout_exercise"
+            ),
+            models.UniqueConstraint(
+                fields=["workout", "order"],
+                name="unique_workout_order",
+                condition=models.Q(order__isnull=False),
+            ),
+        ]
+
+
+class WorkoutSet(models.Model):
+    exercise = models.ForeignKey(
+        WorkoutExercise, on_delete=models.CASCADE, related_name="sets"
+    )
     planned = models.ForeignKey(
-        Set, on_delete=models.CASCADE, related_name="planned_sets"
+        Set,
+        on_delete=models.CASCADE,
+        related_name="planned",
     )
     actual = models.ForeignKey(
-        Set, on_delete=models.CASCADE, null=True, blank=True, related_name="actual_sets"
+        Set,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="actual",
     )
-
-    def clean(self):
-        if self.actual is not None and self.planned.exercise != self.actual.exercise:
-            raise ValidationError(
-                "Planned exercise and actual exercise must match if actual exercise is provided."
-            )
+    note = models.TextField(blank=True)

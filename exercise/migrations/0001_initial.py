@@ -5,47 +5,117 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Exercise',
+            name="Exercise",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=255)),
-                ('category', models.CharField(choices=[('COND', 'Conditioning'), ('MAIN', 'Main Lift'), ('ACCE', 'Accessory Lift'), ('CORE', 'Core')], max_length=4)),
-                ('note', models.TextField()),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=255)),
+                (
+                    "category",
+                    models.CharField(
+                        choices=[
+                            ("COND", "Conditioning"),
+                            ("MAIN", "Main Lift"),
+                            ("ACCE", "Accessory Lift"),
+                            ("CORE", "Core"),
+                        ],
+                        max_length=4,
+                    ),
+                ),
+                ("note", models.TextField()),
             ],
         ),
         migrations.CreateModel(
-            name='Workout',
+            name="Workout",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('date', models.DateField()),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("date", models.DateField()),
             ],
         ),
         migrations.CreateModel(
-            name='Set',
+            name="Set",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('reps', models.PositiveIntegerField()),
-                ('pounds', models.PositiveIntegerField(blank=True, null=True)),
-                ('note', models.CharField(max_length=100)),
-                ('exercise', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='exercise.exercise')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("reps", models.PositiveIntegerField()),
+                ("pounds", models.PositiveIntegerField(blank=True, null=True)),
+                ("note", models.CharField(max_length=100)),
+                (
+                    "exercise",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="exercise.exercise",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='WorkoutSet',
+            name="WorkoutSet",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('completed', models.BooleanField()),
-                ('actual', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='actual_sets', to='exercise.set')),
-                ('planned', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='planned_sets', to='exercise.set')),
-                ('workout', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='workout_sets', to='exercise.workout')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("completed", models.BooleanField()),
+                (
+                    "actual",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="actual_sets",
+                        to="exercise.set",
+                    ),
+                ),
+                (
+                    "planned",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="planned_sets",
+                        to="exercise.set",
+                    ),
+                ),
+                (
+                    "workout",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="workout_sets",
+                        to="exercise.workout",
+                    ),
+                ),
             ],
         ),
     ]
