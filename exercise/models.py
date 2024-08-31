@@ -43,6 +43,14 @@ class Workout(models.Model):
     date = models.DateField()
     completed = models.BooleanField(default=False)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['completed'],
+                condition=models.Q(completed=False),
+                name='unique_uncompleted_workout'
+            )
+        ]
 
 class WorkoutExercise(models.Model):
     workout = models.ForeignKey(
