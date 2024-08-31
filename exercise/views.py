@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.db.models import Max
+from django.db.models import Max, Case, When, DateField
 from exercise.models import Exercise
 
 
@@ -9,7 +9,16 @@ def index(request):
     for category, category_name in Exercise.CATEGORIES:
         exercises = (
             Exercise.objects.filter(category=category)
-            .annotate(latest_date=Max("workoutexercise__workout__date"))
+            .annotate(
+                latest_date=Case(
+                    When(
+                        workoutexercise__workout__completed=True,
+                        then=Max("workoutexercise__workout__date"),
+                    ),
+                    default=None,
+                    output_field=DateField(),
+                )
+            )
             .order_by("-latest_date")
         )
         exercises_by_category[category_name] = exercises

@@ -41,6 +41,7 @@ class Set(models.Model):
 
 class Workout(models.Model):
     date = models.DateField()
+    completed = models.BooleanField(default=False)
 
 
 class WorkoutExercise(models.Model):
