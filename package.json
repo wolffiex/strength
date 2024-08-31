@@ -1,4 +1,8 @@
 {
+  "scripts": {
+    "tailwind-watch": "tailwindcss -i index.css -o ./dist/css/output.css --watch",
+    "tailwind-build": "tailwindcss -i index.css -o ./dist/css/output.css --minify"
+  },
   "devDependencies": {
     "tailwindcss": "^3.4.10"
   }
