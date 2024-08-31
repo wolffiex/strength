@@ -1,19 +1,38 @@
- <!DOCTYPE html>
- <html lang="en">
- <head>
-     <meta charset="UTF-8">
-     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-     <title>200 OK</title>
-     {% load static %}
-     <link rel="stylesheet" href="{% static 'css/output.css' %}">
- </head>
- <body class="bg-gray-100">
-     <div class="container mx-auto py-8">
-         <div class="bg-white p-6 rounded-lg shadow-md">
-             <h1 class="text-3xl font-bold mb-4">200 OK</h1>
-             <p class="text-lg text-gray-700">Everything is working fine!</p>
-         </div>
-     </div>
- </body>
- </html>
+<!DOCTYPE html>
+<html lang="en">
 
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>200 OK</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'css/output.css' %}">
+</head>
+
+<body class="bg-gray-100">
+  <div class="overflow-x-auto mx-auto max-w-[600px]">
+    {% for category, exercises in exercises_by_category.items %}
+    <h2 class="text-2xl font-bold mb-4">{{ category }}</h2>
+    <table class="mb-8">
+      <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+        <tr>
+          <th scope="col" class="px-6 py-3">Exercise Name</th>
+          <th scope="col" class="px-6 py-3">Note</th>
+          <th scope="col" class="px-6 py-3">Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for exercise in exercises %}
+        <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 text-white">
+          <td class="px-6 py-4">{{ exercise.name }}</td>
+          <td class="px-6 py-4">{{ exercise.note }}</td>
+          <td class="px-6 py-4">{{ exercise.latest_date|default_if_none:"" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endfor %}
+  </div>
+</body>
+
+</html>
