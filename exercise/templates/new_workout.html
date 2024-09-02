@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Next workout</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'css/output.css' %}">
+</head>
+
+<body class="bg-gray-100">
+  <div class="overflow-x-auto mx-auto max-w-[600px]">
+    <form method="post">
+      {% csrf_token %}
+      {% for superset in supersets %}
+      {% include "new_superset.html" with section=superset.name|lower section_name=superset.name exercises=superset.exercises num_exercises=superset.num_exercises num_sets=superset.num_sets %}
+      {% endfor %}
+      <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded">Submit</button>
+    </form>
+  </div>
+</body>
+
+</html>

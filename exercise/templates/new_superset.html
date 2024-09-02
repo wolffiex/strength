@@ -1,0 +1,21 @@
+<fieldset class="mb-6">
+  <legend class="text-2xl font-bold mb-4">{{ section_name }}</legend>
+  {% for i in 1|ljust:num_exercises %}
+    <div class="mb-4">
+      <label class="block mb-2">Exercise {{ i }}</label>
+      <select name="{{ section }}_exercise_{{ i }}" class="w-full p-2 border border-gray-300 rounded">
+        {% for exercise in exercises %}
+          <option value="{{ exercise.id }}">{{ exercise.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% for j in 1|ljust:num_sets %}
+      <div class="mb-4">
+        <div class="flex items-center">
+          <input type="number" name="{{ section }}_set_{{ i }}_{{ j }}_reps" placeholder="Reps" class="w-1/2 p-2 border border-gray-300 rounded mr-2">
+          <input type="number" name="{{ section }}_set_{{ i }}_{{ j }}_pounds" placeholder="Pounds" class="w-1/2 p-2 border border-gray-300 rounded">
+        </div>
+      </div>
+    {% endfor %}
+  {% endfor %}
+</fieldset>
