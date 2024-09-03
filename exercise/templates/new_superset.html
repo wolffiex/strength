@@ -1,20 +1,33 @@
 <fieldset class="mb-6">
   <legend class="text-2xl font-bold mb-4">{{ superset.name }}</legend>
   {% for i in superset.exercise_range %}
-    <div class="mb-4">
-      <select name="{{superset.code}}_{{i}}" class="w-full p-2 border border-gray-300 rounded">
-        {% for exercise in superset.exercises %}
-          <option value="{{ exercise.id }}">{{ exercise.name }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    {% for j in superset.set_range %}
-      <div class="mb-4">
-        <div class="flex items-center">
-          <input type="number" name="{{superset.code}}_{{i}}_reps_{{j}}" placeholder="Reps" class="w-1/2 p-2 border border-gray-300 rounded mr-2">
-          <input type="number" name="{{superset.code}}_{{i}}_lbs_{{j}}" placeholder="Pounds" class="w-1/2 p-2 border border-gray-300 rounded">
+  <div class="mb-4">
+    <select name="{{superset.code}}_{{i}}" class="w-full p-2 border border-gray-300 rounded">
+      <option value="" selected disabled>---</option>
+      {% for exercise in superset.exercises %}
+      <option value="{{ exercise.id }}">{{ exercise.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  {% for j in superset.set_range %}
+  <div class="mb-4">
+    <div class="flex items-center">
+      <div>
+        <div class="flex items-center bg-white border border-gray-300 rounded p-2">
+          <input type="number" id="{{superset.code}}_{{i}}_reps_{{j}}" name="{{superset.code}}_{{i}}_reps_{{j}}"
+            class="p-2 border border-gray-300 rounded w-16">
+          <label for="{{superset.code}}_{{i}}_reps_{{j}}" class="ml-2 text-sm font-medium text-gray-700">Reps</label>
         </div>
       </div>
-    {% endfor %}
+      <div>
+        <div class="flex items-center bg-white border border-gray-300 rounded p-2">
+          <input type="number" id="{{superset.code}}_{{i}}_lbs_{{j}}" name="{{superset.code}}_{{i}}_lbs_{{j}}"
+            class="p-2 border border-gray-300 rounded w-16">
+          <label for="{{superset.code}}_{{i}}_lbs_{{j}}" pclass="ml-2 text-sm font-medium text-gray-700">Pounds</label>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
   {% endfor %}
 </fieldset>
