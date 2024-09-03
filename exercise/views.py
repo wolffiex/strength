@@ -57,7 +57,7 @@ def new_workout(request):
         }
         supersets = [
             {
-                "category": category,
+                "code": category.lower(),
                 "name": category_name,
                 "exercises": Exercise.objects.filter(category=category),
                 "exercise_range": range(counts[category][0]),

@@ -14,7 +14,7 @@
     <form method="post">
       {% csrf_token %}
       {% for superset in supersets %}
-      {% include "new_superset.html" with section=superset.name|lower section_name=superset.name exercises=superset.exercises exercise_range=superset.exercise_range set_range=superset.set_range %}
+      {% include "new_superset.html" with superset=superset %}
       {% endfor %}
       <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded">Submit</button>
     </form>

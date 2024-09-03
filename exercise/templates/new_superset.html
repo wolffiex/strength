@@ -1,18 +1,18 @@
 <fieldset class="mb-6">
-  <legend class="text-2xl font-bold mb-4">{{ section_name }}</legend>
-  {% for i in exercise_range %}
+  <legend class="text-2xl font-bold mb-4">{{ superset.name }}</legend>
+  {% for i in superset.exercise_range %}
     <div class="mb-4">
-      <select name="{{ section }}_exercise_{{ forloop.counter }}" class="w-full p-2 border border-gray-300 rounded">
-        {% for exercise in exercises %}
+      <select name="{{superset.code}}_{{i}}" class="w-full p-2 border border-gray-300 rounded">
+        {% for exercise in superset.exercises %}
           <option value="{{ exercise.id }}">{{ exercise.name }}</option>
         {% endfor %}
       </select>
     </div>
-    {% for j in set_range %}
+    {% for j in superset.set_range %}
       <div class="mb-4">
         <div class="flex items-center">
-          <input type="number" name="{{ section }}_set_{{ i }}_{{ j }}_reps" placeholder="Reps" class="w-1/2 p-2 border border-gray-300 rounded mr-2">
-          <input type="number" name="{{ section }}_set_{{ i }}_{{ j }}_pounds" placeholder="Pounds" class="w-1/2 p-2 border border-gray-300 rounded">
+          <input type="number" name="{{superset.code}}_{{i}}_reps_{{j}}" placeholder="Reps" class="w-1/2 p-2 border border-gray-300 rounded mr-2">
+          <input type="number" name="{{superset.code}}_{{i}}_lbs_{{j}}" placeholder="Pounds" class="w-1/2 p-2 border border-gray-300 rounded">
         </div>
       </div>
     {% endfor %}
