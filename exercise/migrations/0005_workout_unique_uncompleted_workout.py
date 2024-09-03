@@ -4,14 +4,17 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('exercise', '0004_workout_completed'),
+        ("exercise", "0004_workout_completed"),
     ]
 
     operations = [
         migrations.AddConstraint(
-            model_name='workout',
-            constraint=models.UniqueConstraint(condition=models.Q(('completed', False)), fields=('completed',), name='unique_uncompleted_workout'),
+            model_name="workout",
+            constraint=models.UniqueConstraint(
+                condition=models.Q(("completed", False)),
+                fields=("completed",),
+                name="unique_uncompleted_workout",
+            ),
         ),
     ]

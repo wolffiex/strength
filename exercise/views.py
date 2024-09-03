@@ -50,18 +50,18 @@ def new_workout(request):
         return redirect("workout_detail", pk=workout.pk)
     else:
         counts = {
-            "COND": (4, 2),
+            "COND": (4, 1),
             "MAIN": (2, 4),
             "ACCE": (3, 3),
-            "CORE": (4, 2),
+            "CORE": (4, 1),
         }
         supersets = [
             {
                 "category": category,
                 "name": category_name,
                 "exercises": Exercise.objects.filter(category=category),
-                "num_exercises": counts[category][0],
-                "num_sets": counts[category][1],
+                "exercise_range": range(counts[category][0]),
+                "set_range": range(counts[category][1]),
             }
             for category, category_name in Exercise.CATEGORIES
         ]

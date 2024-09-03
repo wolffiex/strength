@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('exercise', '0003_workoutexercise_remove_set_exercise_and_more'),
+        ("exercise", "0003_workoutexercise_remove_set_exercise_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='workout',
-            name='completed',
+            model_name="workout",
+            name="completed",
             field=models.BooleanField(default=False),
         ),
     ]

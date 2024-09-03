@@ -13,6 +13,9 @@ class Exercise(models.Model):
     category = models.CharField(max_length=4, choices=CATEGORIES)
     note = models.TextField(blank=True)
 
+    def __str__(self):
+        return self.name
+
 
 class Set(models.Model):
     reps = models.PositiveIntegerField(null=True, blank=True)
@@ -46,11 +49,12 @@ class Workout(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['completed'],
+                fields=["completed"],
                 condition=models.Q(completed=False),
-                name='unique_uncompleted_workout'
+                name="unique_uncompleted_workout",
             )
         ]
+
 
 class WorkoutExercise(models.Model):
     workout = models.ForeignKey(
