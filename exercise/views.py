@@ -31,46 +31,52 @@ def index(request):
 
 
 def new_workout(request):
-    print("EW;lkjf")
-    if request.method == "POST":
-        workout = Workout.objects.create(date=date.today())
-        for i in range(1, 5):
-            exercise_id = request.POST.get(f"cond_exercise_{i}")
-            exercise = Exercise.objects.get(id=exercise_id)
-            workout_exercise = WorkoutExercise.objects.create(
-                workout=workout, exercise=exercise, order=i
-            )
-            for j in range(1, 3):
-                reps = request.POST.get(f"cond_set_{i}_{j}_reps")
-                pounds = request.POST.get(f"cond_set_{i}_{j}_pounds")
-                planned_set = Set.objects.create(reps=reps, pounds=pounds)
-                WorkoutSet.objects.create(
-                    exercise=workout_exercise, planned=planned_set
-                )
-        return redirect("workout_detail", pk=workout.pk)
-    else:
-        counts = {
-            "COND": (4, 1),
-            "MAIN": (2, 4),
-            "ACCE": (3, 3),
-            "CORE": (4, 1),
-        }
-        supersets = [
+    counts = {
+        "COND": (4, 1),
+        "MAIN": (2, 4),
+        "ACCE": (3, 3),
+        "CORE": (4, 1),
+    }
+    inputs = {}
+    for category in counts.keys():
+        exercise_count, set_count = counts[category]
+        category_key = category.lower()
+        inputs[category] = [
             {
-                "code": category.lower(),
-                "name": category_name,
-                "exercises": Exercise.objects.filter(category=category),
-                "exercise_range": range(counts[category][0]),
-                "set_range": range(counts[category][1]),
+                "exercise": f"{category_key}_{i}",
+                "sets": [
+                    {
+                        "reps": f"{category_key}_{i}_reps_{j}",
+                        "lbs": f"{category_key}_{i}_lbs_{j}",
+                    }
+                    for j in range(set_count)
+                ],
             }
-            for category, category_name in Exercise.CATEGORIES
+            for i in range(exercise_count)
         ]
-        # print("Exercise.CATEGORIES:", Exercise.CATEGORIES)
-        # print("context:")
-        # for category, superset in context.items():
-        #     print(f"Category: {category}")
-        #     print(f"  Name: {superset['name']}")
-        #     print(f"  Exercises: {superset['exercises']}")
-        #     print(f"  Num Exercises: {superset['num_exercises']}")
-        #     print(f"  Num Sets: {superset['num_sets']}")
-        return render(request, "new_workout.html", {"supersets": supersets})
+
+    if request.method == "POST":
+        for category in counts.keys():
+            pass
+
+    return render_form(request, inputs)
+
+
+def render_form(request, inputs):
+    supersets = [
+        {
+            "name": category_name,
+            "exercises": Exercise.objects.filter(category=category),
+            "inputs": inputs[category],
+        }
+        for category, category_name in Exercise.CATEGORIES
+    ]
+    # print("Exercise.CATEGORIES:", Exercise.CATEGORIES)
+    # print("context:")
+    # for category, superset in context.items():
+    #     print(f"Category: {category}")
+    #     print(f"  Name: {superset['name']}")
+    #     print(f"  Exercises: {superset['exercises']}")
+    #     print(f"  Num Exercises: {superset['num_exercises']}")
+    #     print(f"  Num Sets: {superset['num_sets']}")
+    return render(request, "new_workout.html", {"supersets": supersets})
