@@ -1,7 +1,7 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 from django.db import transaction
 from django.db.models import Max, Case, When, DateField
-from exercise.models import Exercise, Workout, WorkoutExercise, WorkoutSet, Set
+from exercise.models import Exercise, Workout, Set, WorkoutExercise
 from datetime import date
 
 
@@ -31,57 +31,35 @@ def index(request):
     return render(request, "index.html", context, status=201)
 
 
+SUPERSETS = {  # Category: (exercises, sets)
+    "COND": (4, 2),
+    "MAIN": (2, 4),
+    "ACCE": (3, 3),
+    "CORE": (4, 2),
+}
+
+
 def next_workout(request):
-    counts = {
-        "COND": (4, 1),
-        "MAIN": (2, 4),
-        "ACCE": (3, 3),
-        "CORE": (4, 1),
+    inputs = {
+        category: [f"{category.lower()}_{i}" for i in range(exercise_count)]
+        for category, (exercise_count, _) in SUPERSETS.items()
     }
-    inputs = {}
-    for category in counts.keys():
-        exercise_count, set_count = counts[category]
-        category_key = category.lower()
-        inputs[category] = [
-            {
-                "exercise": f"{category_key}_{i}",
-                "sets": [
-                    {
-                        "reps": f"{category_key}_{i}_reps_{j}",
-                        "lbs": f"{category_key}_{i}_lbs_{j}",
-                    }
-                    for j in range(set_count)
-                ],
-            }
-            for i in range(exercise_count)
-        ]
 
     workout, _ = Workout.objects.get_or_create(completed=False)
     if request.method == "POST":
         order = 0
         with transaction.atomic():
-            for category in counts.keys():
+            WorkoutExercise.objects.filter(workout=workout).delete()
+            for category in SUPERSETS.keys():
                 for input in inputs[category]:
                     order += 1
-                    exercise_pk = request.POST.get(input["exercise"], None)
+                    exercise_pk = request.POST.get(input, None)
                     if exercise_pk:
-                        exercise = WorkoutExercise.objects.create(
+                        WorkoutExercise.objects.create(
                             workout=workout,
                             exercise_id=exercise_pk,
                             order=order,
                         )
-                        for set in input["sets"]:
-                            reps = request.POST.get(set["reps"], None)
-                            if reps:
-                                lbs = request.POST.get(set["lbs"], None)
-                                planned_set = Set.objects.create(
-                                    reps=reps,
-                                    pounds=lbs,
-                                )
-                                WorkoutSet.objects.create(
-                                    exercise=exercise,
-                                    planned=planned_set,
-                                )
 
     return render_form(request, inputs)
 

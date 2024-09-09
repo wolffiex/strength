@@ -17,31 +17,6 @@ class Exercise(models.Model):
         return self.name
 
 
-class Set(models.Model):
-    reps = models.PositiveIntegerField(null=True, blank=True)
-    seconds = models.PositiveIntegerField(null=True, blank=True)
-    pounds = models.PositiveIntegerField(null=True, blank=True)
-    resistance = models.CharField(blank=True, max_length=255)
-
-    class Meta:
-        constraints = [
-            models.CheckConstraint(
-                check=(
-                    models.Q(reps__isnull=False, seconds__isnull=True)
-                    | models.Q(reps__isnull=True, seconds__isnull=False)
-                ),
-                name="reps_seconds_xor",
-            ),
-            models.CheckConstraint(
-                check=(
-                    models.Q(pounds__isnull=False, resistance__exact="")
-                    | models.Q(pounds__isnull=True, resistance__gt="")
-                ),
-                name="pounds_resistance_xor",
-            ),
-        ]
-
-
 class Workout(models.Model):
     date = models.DateField(null=True, blank=True)
     completed = models.BooleanField(default=False)
@@ -66,37 +41,35 @@ class WorkoutExercise(models.Model):
     )
     exercise = models.ForeignKey(
         Exercise,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
     )
     order = models.PositiveIntegerField(blank=True, null=True)
 
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=["workout", "exercise"], name="unique_workout_exercise"
-            ),
-            models.UniqueConstraint(
-                fields=["workout", "order"],
-                name="unique_workout_order",
-                condition=models.Q(order__isnull=False),
-            ),
-        ]
 
-
-class WorkoutSet(models.Model):
+class Set(models.Model):
     exercise = models.ForeignKey(
         WorkoutExercise, on_delete=models.CASCADE, related_name="sets"
     )
-    planned = models.ForeignKey(
-        Set,
-        on_delete=models.CASCADE,
-        related_name="planned",
-    )
-    actual = models.ForeignKey(
-        Set,
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        related_name="actual",
-    )
-    note = models.TextField(blank=True)
+
+    reps = models.PositiveIntegerField(null=True, blank=True)
+    seconds = models.PositiveIntegerField(null=True, blank=True)
+    pounds = models.PositiveIntegerField(null=True, blank=True)
+    resistance = models.CharField(blank=True, max_length=255)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    models.Q(reps__isnull=False, seconds__isnull=True)
+                    | models.Q(reps__isnull=True, seconds__isnull=False)
+                ),
+                name="reps_seconds_xor",
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(pounds__isnull=False, resistance__exact="")
+                    | models.Q(pounds__isnull=True, resistance__gt="")
+                ),
+                name="pounds_resistance_xor",
+            ),
+        ]

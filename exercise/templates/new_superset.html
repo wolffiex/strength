@@ -9,21 +9,5 @@
       {% endfor %}
     </select>
   </div>
-  {% for set in input.sets %}
-  <div class="mb-4">
-    <div class="flex items-center justify-between">
-      <div class="flex items-center bg-white border border-gray-300 rounded p-2">
-        <input type="number" id="{{ set.reps }}" name="{{ set.reps }}"
-          class="p-2 border border-gray-300 rounded w-16">
-        <label for="{{set.reps}}" class="ml-2 text-sm font-medium text-gray-700">Reps</label>
-      </div>
-      <div class="flex items-center bg-white border border-gray-300 rounded p-2">
-        <input type="number" id="{{ set.lbs }}" name="{{ set.lbs }}"
-          class="p-2 border border-gray-300 rounded w-16">
-        <label for="{{ set.lbs }}" class="ml-2 text-sm font-medium text-gray-700">Pounds</label>
-      </div>
-    </div>
-  </div>
-  {% endfor %}
   {% endfor %}
 </fieldset>
