@@ -1,5 +1,5 @@
 from django.db import models
-from django.core.exceptions import ValidationError
+from django.db.models import Q
 
 
 class Exercise(models.Model):
@@ -43,7 +43,7 @@ class Set(models.Model):
 
 
 class Workout(models.Model):
-    date = models.DateField()
+    date = models.DateField(null=True, blank=True)
     completed = models.BooleanField(default=False)
 
     class Meta:
@@ -52,7 +52,11 @@ class Workout(models.Model):
                 fields=["completed"],
                 condition=models.Q(completed=False),
                 name="unique_uncompleted_workout",
-            )
+            ),
+            models.CheckConstraint(
+                check=Q(completed=False) | Q(date__isnull=False),
+                name="completed_workout_date_not_null",
+            ),
         ]
 
 

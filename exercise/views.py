@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect
+from django.db import transaction
 from django.db.models import Max, Case, When, DateField
 from exercise.models import Exercise, Workout, WorkoutExercise, WorkoutSet, Set
 from datetime import date
@@ -30,7 +31,7 @@ def index(request):
     return render(request, "index.html", context, status=201)
 
 
-def new_workout(request):
+def next_workout(request):
     counts = {
         "COND": (4, 1),
         "MAIN": (2, 4),
@@ -55,9 +56,32 @@ def new_workout(request):
             for i in range(exercise_count)
         ]
 
+    workout, _ = Workout.objects.get_or_create(completed=False)
     if request.method == "POST":
-        for category in counts.keys():
-            pass
+        order = 0
+        with transaction.atomic():
+            for category in counts.keys():
+                for input in inputs[category]:
+                    order += 1
+                    exercise_pk = request.POST.get(input["exercise"], None)
+                    if exercise_pk:
+                        exercise = WorkoutExercise.objects.create(
+                            workout=workout,
+                            exercise_id=exercise_pk,
+                            order=order,
+                        )
+                        for set in input["sets"]:
+                            reps = request.POST.get(set["reps"], None)
+                            if reps:
+                                lbs = request.POST.get(set["lbs"], None)
+                                planned_set = Set.objects.create(
+                                    reps=reps,
+                                    pounds=lbs,
+                                )
+                                WorkoutSet.objects.create(
+                                    exercise=exercise,
+                                    planned=planned_set,
+                                )
 
     return render_form(request, inputs)
 
