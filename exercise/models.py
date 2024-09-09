@@ -21,6 +21,9 @@ class Workout(models.Model):
     date = models.DateField(null=True, blank=True)
     completed = models.BooleanField(default=False)
 
+    def __str__(self):
+        return self.date.strftime("%m/%d/%Y") if self.date else "next"
+
     class Meta:
         constraints = [
             models.UniqueConstraint(
@@ -45,6 +48,9 @@ class WorkoutExercise(models.Model):
     )
     order = models.PositiveIntegerField(blank=True, null=True)
 
+    def __str__(self):
+        return f"{self.exercise.name} on {self.workout} #{self.order}"
+
 
 class Set(models.Model):
     exercise = models.ForeignKey(
@@ -55,6 +61,21 @@ class Set(models.Model):
     seconds = models.PositiveIntegerField(null=True, blank=True)
     pounds = models.PositiveIntegerField(null=True, blank=True)
     resistance = models.CharField(blank=True, max_length=255)
+
+    def __str__(self):
+        if self.reps:
+            rep_str = f"{self.reps} reps"
+        else:
+            rep_str = f"{self.seconds} seconds"
+
+        if self.pounds:
+            weight_str = f" at {self.pounds} lbs"
+        elif self.resistance:
+            weight_str = f" {self.resistance}"
+        else:
+            weight_str = ""
+
+        return f"{rep_str}{weight_str} {self.exercise}"
 
     class Meta:
         constraints = [
@@ -67,9 +88,9 @@ class Set(models.Model):
             ),
             models.CheckConstraint(
                 check=(
-                    models.Q(pounds__isnull=False, resistance__exact="")
-                    | models.Q(pounds__isnull=True, resistance__gt="")
+                    models.Q(resistance__exact="")
+                    | (models.Q(pounds__isnull=True) & models.Q(resistance__gt=""))
                 ),
-                name="pounds_resistance_xor",
+                name="pounds_resistance_constraint",
             ),
         ]

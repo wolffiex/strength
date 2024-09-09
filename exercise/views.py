@@ -46,6 +46,8 @@ def next_workout(request):
     }
 
     workout, _ = Workout.objects.get_or_create(completed=False)
+    print(workout)
+    print(workout.id)
     if request.method == "POST":
         order = 0
         with transaction.atomic():
@@ -55,7 +57,6 @@ def next_workout(request):
                     order += 1
                     exercise_id = request.POST.get(input, None)
                     if exercise_id:
-                        print(exercise_id)
                         WorkoutExercise.objects.create(
                             workout=workout,
                             exercise_id=exercise_id,
@@ -71,7 +72,6 @@ def next_workout(request):
             .values_list("exercise_id", flat=True)
             .order_by("order")
         )
-        print(workout_exercises)
         workout_exercises += [""] * exercise_count
         superset = {
             "name": category_name,
@@ -82,5 +82,4 @@ def next_workout(request):
             ],
         }
         supersets.append(superset)
-    print(supersets)
     return render(request, "new_workout.html", {"supersets": supersets})
