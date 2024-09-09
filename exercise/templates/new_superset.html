@@ -1,11 +1,11 @@
 <fieldset class="mb-6 w-80">
   <legend class="text-2xl font-bold mb-4">{{ superset.name }}</legend>
-  {% for input in superset.inputs %}
+  {% for workout_exercise in superset.workout_exercises %}
   <div class="mb-4">
-    <select name="{{ input.exercise }}" class="w-full p-2 border border-gray-300 rounded">
-      <option value="" selected disabled>---</option>
+  <select name="{{workout_exercise.name}}" class="w-full p-2 border border-gray-300 rounded">
+      <option value="" {% if not workout_exercise.exercise %}selected{% endif %}>---</option>
       {% for exercise in superset.exercises %}
-      <option value="{{ exercise.id }}">{{ exercise.name }}</option>
+      <option value="{{ exercise.id }}" {% if workout_exercise.value == exercise.id %}selected{% endif %}>{{ exercise.name }}</option>
       {% endfor %}
     </select>
   </div>

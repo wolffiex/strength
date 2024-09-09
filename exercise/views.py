@@ -53,32 +53,34 @@ def next_workout(request):
             for category in SUPERSETS.keys():
                 for input in inputs[category]:
                     order += 1
-                    exercise_pk = request.POST.get(input, None)
-                    if exercise_pk:
+                    exercise_id = request.POST.get(input, None)
+                    if exercise_id:
+                        print(exercise_id)
                         WorkoutExercise.objects.create(
                             workout=workout,
-                            exercise_id=exercise_pk,
+                            exercise_id=exercise_id,
                             order=order,
                         )
 
-    return render_form(request, inputs)
-
-
-def render_form(request, inputs):
-    supersets = [
-        {
+    supersets = []
+    for category, category_name in Exercise.CATEGORIES:
+        exercise_count, _ = SUPERSETS[category]
+        exercises = Exercise.objects.filter(category=category)
+        workout_exercises = list(
+            WorkoutExercise.objects.filter(workout=workout, exercise__category=category)
+            .values_list("exercise_id", flat=True)
+            .order_by("order")
+        )
+        print(workout_exercises)
+        workout_exercises += [""] * exercise_count
+        superset = {
             "name": category_name,
-            "exercises": Exercise.objects.filter(category=category),
-            "inputs": inputs[category],
+            "exercises": exercises,
+            "workout_exercises": [
+                {"name": name, "value": value}
+                for name, value in zip(inputs[category], workout_exercises)
+            ],
         }
-        for category, category_name in Exercise.CATEGORIES
-    ]
-    # print("Exercise.CATEGORIES:", Exercise.CATEGORIES)
-    # print("context:")
-    # for category, superset in context.items():
-    #     print(f"Category: {category}")
-    #     print(f"  Name: {superset['name']}")
-    #     print(f"  Exercises: {superset['exercises']}")
-    #     print(f"  Num Exercises: {superset['num_exercises']}")
-    #     print(f"  Num Sets: {superset['num_sets']}")
+        supersets.append(superset)
+    print(supersets)
     return render(request, "new_workout.html", {"supersets": supersets})
