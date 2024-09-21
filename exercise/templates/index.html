@@ -18,17 +18,14 @@
         <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
           <tr>
             <th scope="col" class="px-6 py-3">Exercise Name</th>
-            <th scope="col" class="px-6 py-3">Note</th>
-            <th scope="col" class="px-6 py-3">Date</th>
             <th scope="col" class="px-6 py-3">Last sets</th>
+            <th scope="col" class="px-6 py-3">Date</th>
           </tr>
         </thead>
         <tbody>
           {% for exercise_data in exercises %}
           <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 text-white">
             <td class="px-6 py-4">{{ exercise_data.exercise.name }}</td>
-            <td class="px-6 py-4">{{ exercise_data.exercise.note }}</td>
-            <td class="px-6 py-4">{{ exercise_data.exercise.latest_date|default_if_none:"" }}</td>
             <td class="px-6 py-4">
               <ul>
                 {% with latest_sets=exercise_data.sets %}
@@ -38,6 +35,7 @@
                 {% endwith %}
               </ul>
             </td>
+            <td class="px-6 py-4">{{ exercise_data.exercise.latest_date|default_if_none:"" }}</td>
           </tr>
           {% endfor %}
         </tbody>

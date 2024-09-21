@@ -6,51 +6,58 @@ from datetime import date
 
 
 def fetch_sets(exercise):
-    latest_workout_exercise = exercise.workoutexercise_set.filter(
-            workout__completed=True).order_by('-workout__date').first()
+    latest_workout_exercise = (
+        exercise.workoutexercise_set.filter(workout__completed=True)
+        .order_by("-workout__date")
+        .first()
+    )
     if not latest_workout_exercise:
         return []
 
     sets = []
     for set_instance in latest_workout_exercise.sets.all():
-        rep_str = f"{set_instance.reps} reps" if set_instance.reps else f"{set_instance.seconds} seconds"
+        rep_str = (
+            f"{set_instance.reps} reps"
+            if set_instance.reps
+            else f"{set_instance.seconds} seconds"
+        )
 
-        weight_str = f" at {set_instance.pounds} lbs" if set_instance.pounds else f" {set_instance.resistance}" if set_instance.resistance else ""
+        weight_str = (
+            f" at {set_instance.pounds} lbs"
+            if set_instance.pounds
+            else f" {set_instance.resistance}"
+            if set_instance.resistance
+            else ""
+        )
 
     sets.append(f"{rep_str}{weight_str}")
 
     return sets
+
 
 def index(request):
     exercises_by_category = {}
 
     for category, category_name in Exercise.CATEGORIES:
         exercises = (
-            (
-                Exercise.objects.filter(category=category)
-                .annotate(
-                    latest_date=Case(
-                        When(
-                            workoutexercise__workout__completed=True,
-                            then=Max("workoutexercise__workout__date"),
-                        ),
-                        default=None,
-                        output_field=DateField(),
-                    )
+            Exercise.objects.filter(category=category)
+            .annotate(
+                latest_date=Case(
+                    When(
+                        workoutexercise__workout__completed=True,
+                        then=Max("workoutexercise__workout__date"),
+                    ),
+                    default=None,
+                    output_field=DateField(),
                 )
-                .order_by("-latest_date")
             )
+            .order_by("-latest_date")
         )
 
-
         exercises_by_category[category_name] = [
-            {
-                "exercise": exercise,
-                "sets": fetch_sets(exercise)
-            }
+            {"exercise": exercise, "sets": fetch_sets(exercise)}
             for exercise in exercises
         ]
-
 
     context = {
         "exercises_by_category": exercises_by_category,

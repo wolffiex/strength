@@ -63,34 +63,16 @@ class Set(models.Model):
     resistance = models.CharField(blank=True, max_length=255)
 
     def __str__(self):
+        rep_str = ""
         if self.reps:
             rep_str = f"{self.reps} reps"
-        else:
-            rep_str = f"{self.seconds} seconds"
+        if self.seconds:
+            rep_str += f"{self.seconds} seconds"
 
+        weight_str = ""
         if self.pounds:
             weight_str = f" at {self.pounds} lbs"
-        elif self.resistance:
-            weight_str = f" {self.resistance}"
-        else:
-            weight_str = ""
+        if self.resistance:
+            weight_str += f" {self.resistance}"
 
         return f"{rep_str}{weight_str} {self.exercise}"
-
-    class Meta:
-        constraints = [
-            models.CheckConstraint(
-                check=(
-                    models.Q(reps__isnull=False, seconds__isnull=True)
-                    | models.Q(reps__isnull=True, seconds__isnull=False)
-                ),
-                name="reps_seconds_xor",
-            ),
-            models.CheckConstraint(
-                check=(
-                    models.Q(resistance__exact="")
-                    | (models.Q(pounds__isnull=True) & models.Q(resistance__gt=""))
-                ),
-                name="pounds_resistance_constraint",
-            ),
-        ]
