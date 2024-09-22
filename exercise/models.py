@@ -49,7 +49,10 @@ class WorkoutExercise(models.Model):
     order = models.PositiveIntegerField(blank=True, null=True)
 
     def __str__(self):
-        return f"{self.exercise.name} on {self.workout} #{self.order}"
+        description = f"{self.exercise.name} on {self.workout}"
+        if self.order is not None:
+            description += f" #{self.order}"
+        return description
 
 
 class Set(models.Model):

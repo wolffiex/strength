@@ -72,11 +72,14 @@ SUPERSETS = {  # Category: (exercises, sets)
     "CORE": 2,
 }
 
+
 def save_workout(selected_exercises):
     # Get or create the incomplete workout
     workout, _ = Workout.objects.get_or_create(completed=False)
     # Assert that the workout has no associated sets
-    assert not Set.objects.filter(exercise__workout=workout).exists(), "Workout already has associated sets"
+    assert not Set.objects.filter(
+        exercise__workout=workout
+    ).exists(), "Workout already has associated sets"
 
     # Add new WorkoutExercises based on the selected exercises
     with transaction.atomic():
@@ -86,13 +89,16 @@ def save_workout(selected_exercises):
         for order, exercise_pk in enumerate(selected_exercises, start=1):
             exercise = Exercise.objects.get(pk=exercise_pk)
             WorkoutExercise.objects.create(
-                workout=workout,
-                exercise=exercise,
-                order=order
+                workout=workout, exercise=exercise, order=order
             )
+
+
 def load_next_selected():
     workout = Workout.objects.filter(completed=False).get()
-    return list(workout.exercises.order_by("order").values_list("exercise__id", flat=True))
+    return list(
+        workout.exercises.order_by("order").values_list("exercise__id", flat=True)
+    )
+
 
 def next_workout(request):
     if request.method == "POST":
