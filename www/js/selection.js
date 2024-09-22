@@ -26,6 +26,11 @@ function makeSelectable(querySelector) {
       updateSelection(selection, elements)
     })
   }
+  return {
+    clear: () => {
+      selection = new Set()
+      updateSelection(selection, elements)
+    },
+    get: () => [...selection].map(n => elements[n].dataset.pk),
+  }
 }
-
-console.log('ho', makeSelectable)

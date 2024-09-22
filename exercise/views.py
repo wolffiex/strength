@@ -1,3 +1,4 @@
+import json
 from django.shortcuts import render
 from django.db import transaction
 from django.db.models import Max, Case, When, DateField, F
@@ -36,6 +37,10 @@ def fetch_sets(exercise):
 
 
 def index(request):
+    if request.method == 'POST':
+        selected_exercises = json.loads(request.POST.get('selected_exercises', '[]'))
+        return next_workout(request, selected_exercises)
+
     exercises_by_category = {}
 
     for category, category_name in Exercise.CATEGORIES:
@@ -66,54 +71,24 @@ def index(request):
 
 
 SUPERSETS = {  # Category: (exercises, sets)
-    "COND": (4, 2),
-    "MAIN": (2, 4),
-    "ACCE": (3, 3),
-    "CORE": (4, 2),
+    "COND": 2,
+    "MAIN": 4,
+    "ACCE": 3,
+    "CORE": 2,
 }
 
 
-def next_workout(request):
-    inputs = {
-        category: [f"{category.lower()}_{i}" for i in range(exercise_count)]
-        for category, (exercise_count, _) in SUPERSETS.items()
-    }
-
-    workout, _ = Workout.objects.get_or_create(completed=False)
-    print(workout)
-    print(workout.id)
-    if request.method == "POST":
-        order = 0
-        with transaction.atomic():
-            WorkoutExercise.objects.filter(workout=workout).delete()
-            for category in SUPERSETS.keys():
-                for input in inputs[category]:
-                    order += 1
-                    exercise_id = request.POST.get(input, None)
-                    if exercise_id:
-                        WorkoutExercise.objects.create(
-                            workout=workout,
-                            exercise_id=exercise_id,
-                            order=order,
-                        )
-
+def next_workout(request, exercise_pks):
+    qset = Exercise.objects.in_bulk(exercise_pks)
+    exercises = [qset[int(pk)] for pk in exercise_pks]
     supersets = []
     for category, category_name in Exercise.CATEGORIES:
-        exercise_count, _ = SUPERSETS[category]
-        exercises = Exercise.objects.filter(category=category)
-        workout_exercises = list(
-            WorkoutExercise.objects.filter(workout=workout, exercise__category=category)
-            .values_list("exercise_id", flat=True)
-            .order_by("order")
-        )
-        workout_exercises += [""] * exercise_count
+        set_count = SUPERSETS[category]
+        filtered_exercises = [exercise for exercise in exercises if exercise.category == category]
         superset = {
             "name": category_name,
-            "exercises": exercises,
-            "workout_exercises": [
-                {"name": name, "value": value}
-                for name, value in zip(inputs[category], workout_exercises)
-            ],
+            "count": set_count,
+            "exercises": filtered_exercises
         }
         supersets.append(superset)
     return render(request, "new_workout.html", {"supersets": supersets})
