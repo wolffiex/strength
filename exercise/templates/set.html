@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Training</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'css/output.css' %}">
+</head>
+
+<body class="bg-gray-100">
+  <div class="min-h-screen bg-gray-100 py-6 flex flex-col justify-center sm:py-12">
+    <div class="relative py-3 sm:max-w-xl sm:mx-auto">
+      <div class="relative px-4 py-10 bg-white shadow-lg sm:rounded-3xl sm:p-20">
+        <div class="flex justify-between items-center mb-4">
+          <h1 class="text-2xl font-semibold">{{ exercise.name }}</h1>
+          <h2 class="text-gray-600">{{ exercise.get_category_display }} - Set {{ set_num}}</h2>
+        </div>
+        <table class="table-fixed w-full border border-gray-200 mb-4">
+          <thead class="bg-gray-200">
+            <tr>
+              <th class="px-4 py-2">Today</th>
+              <th class="px-4 py-2">
+                {% if last_workout %}
+                  {{ last_workout.date|timesince:current_date }} Ago
+                {% else %}
+                  --
+                {% endif %}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="px-4 py-2 align-top w-1/2">
+                <ul class="list-decimal list-inside">
+                  {% for set in today_sets %}
+                    <li>{{ set }} </li>
+                  {% endfor %}
+                </ul>
+              </td>
+              <td class="px-4 py-2 align-top text-gray-500 border-l border-gray-200 w-1/2">
+                <ul class="list-decimal list-inside space-y-1">
+                  {% for set in last_sets %}
+                    <li>{{ set }} </li>
+                  {% endfor %}
+                </ul>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="space-y-4">
+          <form method="post">
+            <div class="bg-gray-100 p-4 rounded-lg">
+              <form method="post">
+                <div class="mb-4">
+                  {% csrf_token %}
+                  <label class="block text-gray-700 font-bold mb-2" for="reps">Reps</label>
+                  <input
+                    class="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    id="reps" type="number" placeholder="Enter reps">
+                </div>
+                <div class="mb-4">
+                  <label class="block text-gray-700 font-bold mb-2" for="pounds">Pounds</label>
+                  <input
+                    class="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    id="pounds" type="number" placeholder="Enter pounds">
+                </div>
+                <div class="mb-4">
+                  <label class="block text-gray-700 font-bold mb-2" for="note">Note</label>
+                  <textarea
+                    class="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    id="note" rows="2" placeholder="Enter note"></textarea>
+                </div>
+                <div class="flex items-center justify-between">
+                  <input class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit" name="action" value="Back">
+                  <input class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit" name="action" value="Skip">
+                  <input class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit" name="action" value="Next">
+                </div>
+              </form>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

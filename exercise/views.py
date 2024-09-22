@@ -137,5 +137,27 @@ def next_workout(request):
     )
 
 
-def superset(request):
-    return render(request, "superset.html", {"supersets": {}})
+def exercise_set(request, set_num, exercise_num):
+    exercises = load_next_selected()
+    exercise = Exercise.objects.get(pk=exercises[exercise_num])
+    incomplete_workout = Workout.objects.get(completed=False)
+    workout_exercise = WorkoutExercise.objects.get(
+        workout=incomplete_workout, exercise=exercise
+    )
+    today_sets = map(lambda s: s.render(), Set.objects.filter(exercise=workout_exercise))
+
+    try:
+        last_workout = Workout.objects.filter(
+            completed=True,
+            exercises__exercise=exercise
+        ).latest('date')
+        workout_exercise = WorkoutExercise.objects.get(workout=last_workout, exercise=exercise)
+        last_sets = map(lambda s: s.render(), Set.objects.filter(exercise=workout_exercise))
+    except Workout.DoesNotExist:
+        last_sets = []
+
+    return render(
+        request,
+        "set.html",
+        {"exercise": exercise, "set_num": set_num, "today_sets": today_sets, "last_sets": last_sets},
+    )

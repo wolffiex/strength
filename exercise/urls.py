@@ -1,10 +1,9 @@
 from django.urls import path
-from django.urls import include
 
-from exercise.views import index, next_workout, superset
+from exercise.views import index, next_workout, exercise_set
 
 urlpatterns = [
     path("", index, name="index"),
     path("next/", next_workout, name="next_workout"),
-    path("superset/", superset, name="superset"),
+    path("exercise/<int:exercise_num>/set/<int:set_num>/", exercise_set, name="set"),
 ]

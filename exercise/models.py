@@ -65,6 +65,9 @@ class Set(models.Model):
     pounds = models.PositiveIntegerField(null=True, blank=True)
     resistance = models.CharField(blank=True, max_length=255)
 
+    def render(self):
+        return f"{self.reps} reps at {self.pounds } lbs"
+
     def __str__(self):
         rep_str = ""
         if self.reps:
