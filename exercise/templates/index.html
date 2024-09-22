@@ -19,7 +19,7 @@
         <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
           <tr>
             <th scope="col" class="px-6 py-3">Exercise Name</th>
-            <th scope="col" class="px-6 py-3">Last sets</th>
+            <th scope="col" class="px-6 py-3">Last set</th>
             <th scope="col" class="px-6 py-3">Date</th>
           </tr>
         </thead>k
@@ -47,9 +47,9 @@
       {% csrf_token %}
       <input type="hidden" name="selected_exercises" id="selected_exercises">
       <div class="flex justify-center mt-8">
-        <a href="/" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded mr-4">
-          Back
-        </a>
+        <button type="reset" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded mr-4">
+          Reset
+        </button>
         <button type="submit" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
           Submit
         </button>

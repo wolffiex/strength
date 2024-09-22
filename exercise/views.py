@@ -1,6 +1,5 @@
 import json
-from django.shortcuts import render
-from django.db import transaction
+from django.shortcuts import render, redirect
 from django.db.models import Max, Case, When, DateField, F
 from exercise.models import Exercise, Workout, Set, WorkoutExercise
 from datetime import date
