@@ -36,8 +36,8 @@ def fetch_sets(exercise):
 
 
 def index(request):
-    if request.method == 'POST':
-        selected_exercises = json.loads(request.POST.get('selected_exercises', '[]'))
+    if request.method == "POST":
+        selected_exercises = json.loads(request.POST.get("selected_exercises", "[]"))
         return next_workout(request, selected_exercises)
 
     exercises_by_category = {}
@@ -77,20 +77,37 @@ SUPERSETS = {  # Category: (exercises, sets)
 }
 
 
-def next_workout(request, exercise_pks):
+def next_workout(request):
+    selection = request.GET.get("selected_exercises", None)
+    assert selection
+    exercise_pks = json.loads(selection)
     qset = Exercise.objects.in_bulk(exercise_pks)
-    exercises = [qset[int(pk)] for pk in exercise_pks]
+
     supersets = []
+    selected_exercises = []
     for category, category_name in Exercise.CATEGORIES:
         set_count = SUPERSETS[category]
-        filtered_exercises = [exercise for exercise in exercises if exercise.category == category]
+        filtered_exercises = []
+        for pk in exercise_pks:
+            exercise = qset[int(pk)]
+            if exercise.category == category:
+                filtered_exercises.append((len(selected_exercises), exercise))
+                selected_exercises.append(exercise.pk)
         superset = {
             "name": category_name,
             "count": set_count,
-            "exercises": filtered_exercises
+            "exercises": filtered_exercises,
         }
         supersets.append(superset)
-    return render(request, "new_workout.html", {"supersets": supersets})
+    return render(
+        request,
+        "new_workout.html",
+        {
+            "supersets": supersets,
+            "selected_exercises": json.dumps(selected_exercises),
+        },
+    )
+
 
 def superset(request):
     return render(request, "superset.html", {"supersets": {}})

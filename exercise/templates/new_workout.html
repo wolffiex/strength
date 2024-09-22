@@ -11,11 +11,11 @@
 
 <body class="bg-gray-100">
   <div class="overflow-x-auto mx-auto max-w-[600px]">
-    <form method="post">
-      {% csrf_token %}
-      {% for superset in supersets %}
-      {% include "new_superset.html" with superset=superset %}
-      {% endfor %}
+    {% csrf_token %}
+    {% for superset in supersets %}
+    {% include "new_superset.html" with superset=superset %}
+    {% endfor %}
+    <form>
       <div class="flex justify-center mt-8">
         <a href="/" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded mr-4">
           Back
@@ -24,7 +24,22 @@
           Save
         </button>
       </div>
+      <input type="hidden" name="selected_exercises" value="{{ selected_exercises|safe }}">
     </form>
+    <script>
+      form = document.querySelector("form")
+      function reorder(num, direction) {
+        selectedExercises = JSON.parse(form.selected_exercises.value)
+        swap1 = selectedExercises[num]
+        swap2 = selectedExercises[num + direction]
+        selectedExercises[num] = swap2
+        selectedExercises[num + direction] = swap1
+        // Update the query parameter using URLSearchParams
+        const params = new URLSearchParams(window.location.search)
+        params.set("selected_exercises", JSON.stringify(selectedExercises))
+        window.location.search = params.toString()
+      }
+    </script>
   </div>
 </body>
 
