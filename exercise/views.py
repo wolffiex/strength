@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.db import transaction
-from django.db.models import Max, Case, When, DateField, Prefetch
+from django.db.models import Max, Case, When, DateField, F
 from exercise.models import Exercise, Workout, Set, WorkoutExercise
 from datetime import date
 
@@ -51,7 +51,7 @@ def index(request):
                     output_field=DateField(),
                 )
             )
-            .order_by("-latest_date")
+            .order_by(F("latest_date").asc(nulls_first=True))
         )
 
         exercises_by_category[category_name] = [
