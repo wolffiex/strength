@@ -14,35 +14,42 @@
     {% for category, exercises in exercises_by_category.items %}
     <div class="bg-blue-900">
       <h2 class="text-2xl font-bold mb-4 text-white flex items-center justify-center my-6">{{ category }}</h2>
-      <table class="mb-8">
-        <table class="mb-8 w-full">
-          <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-            <tr>
-              <th scope="col" class="px-6 py-3">Exercise Name</th>
-              <th scope="col" class="px-6 py-3">Last sets</th>
-              <th scope="col" class="px-6 py-3">Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for exercise_data in exercises %}
-            <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 text-white">
-              <td class="px-6 py-4">{{ exercise_data.exercise.name }}</td>
-              <td class="px-6 py-4">
-                <ul>
-                  {% with latest_sets=exercise_data.sets %}
-                  {% for set in latest_sets %}
-                  <li>{{ set }}</li>
-                  {% endfor %}
-                  {% endwith %}
-                </ul>
-              </td>
-              <td class="px-6 py-4">{{ exercise_data.exercise.latest_date|default_if_none:""|date:"M j" }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+      <table class="mb-8 w-full">
+        <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+          <tr>
+            <th scope="col" class="px-6 py-3">Exercise Name</th>
+            <th scope="col" class="px-6 py-3">Last sets</th>
+            <th scope="col" class="px-6 py-3">Date</th>
+          </tr>
+        </thead>k
+        <tbody>
+          {% for exercise_data in exercises %}
+          <tr class="bg-white border-b bg-gray-800 border-gray-700 text-white">
+            <td class="px-6 py-4">{{ exercise_data.exercise.name }}</td>
+            <td class="px-6 py-4">
+              <ul>
+                {% with latest_sets=exercise_data.sets %}
+                {% for set in latest_sets %}
+                <li>{{ set }}</li>
+                {% endfor %}
+                {% endwith %}
+              </ul>
+            </td>
+            <td class="px-6 py-4">{{ exercise_data.exercise.latest_date|default_if_none:""|date:"M j" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
     {% endfor %}
+    <script>
+      let trs = document.querySelectorAll("table tbody tr");
+      trs.forEach(tr => tr.addEventListener("click", function () {
+        console.log("Clicked element:", tr)
+        tr.classList.remove("bg-gray-800");
+        tr.classList.add("bg-green-500");
+      }))
+    </script>
   </div>
 </body>
 
