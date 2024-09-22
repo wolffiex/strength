@@ -117,3 +117,6 @@ def next_workout(request):
         }
         supersets.append(superset)
     return render(request, "new_workout.html", {"supersets": supersets})
+
+def superset(request):
+    return render(request, "superset.html", {"supersets": {}})
