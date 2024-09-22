@@ -1,8 +1,8 @@
 import json
 from django.shortcuts import render, redirect
+from django.db import transaction
 from django.db.models import Max, Case, When, DateField, F
 from exercise.models import Exercise, Workout, Set, WorkoutExercise
-from datetime import date
 
 
 def fetch_sets(exercise):
@@ -36,10 +36,6 @@ def fetch_sets(exercise):
 
 
 def index(request):
-    if request.method == "POST":
-        selected_exercises = json.loads(request.POST.get("selected_exercises", "[]"))
-        return next_workout(request, selected_exercises)
-
     exercises_by_category = {}
 
     for category, category_name in Exercise.CATEGORIES:
@@ -76,11 +72,37 @@ SUPERSETS = {  # Category: (exercises, sets)
     "CORE": 2,
 }
 
+def save_workout(selected_exercises):
+    # Get or create the incomplete workout
+    workout, _ = Workout.objects.get_or_create(completed=False)
+    # Assert that the workout has no associated sets
+    assert not Set.objects.filter(exercise__workout=workout).exists(), "Workout already has associated sets"
+
+    # Add new WorkoutExercises based on the selected exercises
+    with transaction.atomic():
+        # Remove existing WorkoutExercises for the workout
+        workout.exercises.all().delete()
+
+        for order, exercise_pk in enumerate(selected_exercises, start=1):
+            exercise = Exercise.objects.get(pk=exercise_pk)
+            WorkoutExercise.objects.create(
+                workout=workout,
+                exercise=exercise,
+                order=order
+            )
+def load_next_selected():
+    workout = Workout.objects.filter(completed=False).get()
+    return list(workout.exercises.order_by("order").values_list("exercise__id", flat=True))
 
 def next_workout(request):
+    if request.method == "POST":
+        save_workout(json.loads(request.POST["selected_exercises"]))
+        return redirect("next_workout")
+
     selection = request.GET.get("selected_exercises", None)
-    assert selection
-    exercise_pks = json.loads(selection)
+    exercise_pks = json.loads(selection) if selection else load_next_selected()
+
+    assert exercise_pks
     qset = Exercise.objects.in_bulk(exercise_pks)
 
     supersets = []
