@@ -97,7 +97,6 @@ def save_workout(selected_exercises):
 def next_workout(request):
     workout = Workout.objects.filter(completed=False).get()
     if request.method == "POST":
-        print(request.POST["selected_exercises"])
         save_workout(json.loads(request.POST["selected_exercises"]))
         return redirect(reverse("next_workout"))
 
@@ -108,12 +107,10 @@ def next_workout(request):
         objects = Exercise.objects.in_bulk(selection_list)
         exercises = [objects[pk] for pk in selection_list]
     else:
-        workout_exercises = workout.exercises.order_by("order").select_related("exercise")
+        workout_exercises = workout.exercises.order_by("order").select_related(
+            "exercise"
+        )
         exercises = [exer.exercise for exer in workout_exercises]
-
-
-    print(selection)
-    print(exercises)
 
     supersets = []
     selected_exercises = []
@@ -143,7 +140,7 @@ def next_workout(request):
 def gen_workout_steps(workout):
     exercises = list(Workout.objects.get(pk=workout).exercises.order_by("order"))
     for category, set_count in SUPERSETS.items():
-        yield ("workout", (workout, category))
+        yield ("workout", (workout, category.lower()))
         for set_num in range(0, set_count):
             for exercise in filter(
                 lambda wo: wo.exercise.category == category, exercises
@@ -170,6 +167,19 @@ def lookup_step(request_path, workout):
     raise ValueError(f"Step not found for {request_path}")
 
 
+def get_step_urls(request_path, workout_pk):
+    step = lookup_step(request_path, workout_pk)
+
+    def get_url(dir):
+        new_step = step + dir
+        if new_step >= 0:
+            return reverse("workout_step", args=(workout_pk, step + dir))
+
+        return None
+
+    return {"prev_url": get_url(-1), "next_url": get_url(1)}
+
+
 def workout_set(request, set_num, exercise):
     if request.method == "POST":
         new_set = Set(exercise=exercise, set_num=set_num)
@@ -177,7 +187,6 @@ def workout_set(request, set_num, exercise):
 
     today_sets = map(lambda s: s.render(), Set.objects.filter(exercise=exercise))
     wo = WorkoutExercise.objects.get(pk=exercise)
-    step = lookup_step(request.path, wo.workout_id)
 
     try:
         last_workout = Workout.objects.filter(
@@ -192,12 +201,6 @@ def workout_set(request, set_num, exercise):
     except Workout.DoesNotExist:
         last_sets = []
 
-    prev_url = (
-        None if step == 0 else reverse("workout_step", args=(wo.workout_id, step - 1))
-    )
-    next_url = (
-        None if step == 0 else reverse("workout_step", args=(wo.workout_id, step + 1))
-    )
     return render(
         request,
         "set.html",
@@ -206,11 +209,49 @@ def workout_set(request, set_num, exercise):
             "set_num": set_num,
             "today_sets": today_sets,
             "last_sets": last_sets,
-            "prev_url": prev_url,
-            "next_url": next_url,
+            **get_step_urls(request.path, wo.workout_id),
         },
     )
 
 
-def workout(request, cateworkout, category):
-    pass
+def workout(request, workout, category):
+    workout = Workout.objects.get(pk=workout)
+    exercises = workout.exercises.filter(exercise__category=category.upper()).order_by(
+        "order"
+    )
+
+    exercise_data = []
+    for exercise in exercises:
+        last_workout = None
+        try:
+            last_workout = Workout.objects.filter(
+                completed=True, exercises__exercise=exercise.exercise
+            ).latest("date")
+            last_exercise = WorkoutExercise.objects.get(
+                workout=last_workout, exercise=exercise.exercise
+            )
+            last_sets = map(
+                lambda s: s.render(), Set.objects.filter(exercise=last_exercise)
+            )
+        except Workout.DoesNotExist:
+            last_sets = []
+
+        exercise_data.append(
+            {
+                "last_workout": last_workout,
+                "exercise": exercise,
+                "last_sets": list(last_sets),
+            }
+        )
+
+    category_name = dict(Exercise.CATEGORIES)[category.upper()]
+    return render(
+        request,
+        "workout.html",
+        {
+            "workout": workout,
+            "exercises": exercise_data,
+            "category": category_name,
+            **get_step_urls(request.path, workout.pk),
+        },
+    )

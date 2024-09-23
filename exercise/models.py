@@ -71,7 +71,10 @@ class Set(models.Model):
     resistance = models.CharField(blank=True, max_length=255)
 
     def render(self):
-        return f"{self.reps} reps at {self.pounds } lbs"
+        rendering = f"{self.reps} reps"
+        if self.pounds:
+            rendering += f" x {self.pounds } lbs"
+        return rendering
 
     def __str__(self):
         rep_str = ""
