@@ -140,7 +140,7 @@ def next_workout(request):
 def gen_workout_steps(workout):
     exercises = list(Workout.objects.get(pk=workout).exercises.order_by("order"))
     for category, set_count in SUPERSETS.items():
-        yield ("workout", (workout, category.lower()))
+        yield ("workout", (workout, category))
         for set_num in range(0, set_count):
             for exercise in filter(
                 lambda wo: wo.exercise.category == category, exercises
@@ -156,23 +156,21 @@ def workout_step(_, workout, step):
     return redirect(view_name, *args, permanent=False)
 
 
-def lookup_step(request_path, workout):
-    n = 0
-    for view_name, args in gen_workout_steps(workout):
-        print(args)
+def get_step_urls(request_path, workout_pk):
+    step = None
+    count = 0
+    for view_name, args in gen_workout_steps(workout_pk):
         path = reverse(view_name, args=args)
         if path == request_path:
-            return n
-        n += 1
-    raise ValueError(f"Step not found for {request_path}")
+            step = count
+        count += 1
 
-
-def get_step_urls(request_path, workout_pk):
-    step = lookup_step(request_path, workout_pk)
+    if step is None:
+        raise ValueError(f"Step not found for {request_path}")
 
     def get_url(dir):
         new_step = step + dir
-        if new_step >= 0:
+        if new_step >= 0 and new_step<count:
             return reverse("workout_step", args=(workout_pk, step + dir))
 
         return None
@@ -181,19 +179,26 @@ def get_step_urls(request_path, workout_pk):
 
 
 def workout_set(request, set_num, exercise):
-    if request.method == "POST":
-        new_set = Set(exercise=exercise, set_num=set_num)
-        new_set.save()
-
-    today_sets = map(lambda s: s.render(), Set.objects.filter(exercise=exercise))
     wo = WorkoutExercise.objects.get(pk=exercise)
+    if request.method == "POST":
+        reps = request.POST["reps"]
+        pounds = request.POST["pounds"]
+        reps = int(reps) if reps else None
+        pounds = int(pounds) if pounds else None
+        next_url = request.POST.get("next_url", None)
+        new_set = Set(exercise=wo, set_num=set_num, reps=reps, pounds=pounds)
+        new_set.save()
+        return redirect(next_url)
 
+    today_sets = map(lambda s: s.render(), Set.objects.filter(exercise=wo))
+
+    last_workout = None
     try:
         last_workout = Workout.objects.filter(
-            completed=True, exercises__exercise=exercise
+            completed=True, exercises__exercise=wo.exercise
         ).latest("date")
         last_exercise = WorkoutExercise.objects.get(
-            workout=last_workout, exercise=exercise.exercise
+            workout=last_workout, exercise=wo.exercise
         )
         last_sets = map(
             lambda s: s.render(), Set.objects.filter(exercise=last_exercise)
@@ -209,6 +214,7 @@ def workout_set(request, set_num, exercise):
             "set_num": set_num,
             "today_sets": today_sets,
             "last_sets": last_sets,
+            "last_workout": last_workout,
             **get_step_urls(request.path, wo.workout_id),
         },
     )
@@ -216,7 +222,7 @@ def workout_set(request, set_num, exercise):
 
 def workout(request, workout, category):
     workout = Workout.objects.get(pk=workout)
-    exercises = workout.exercises.filter(exercise__category=category.upper()).order_by(
+    exercises = workout.exercises.filter(exercise__category=category).order_by(
         "order"
     )
 
@@ -244,7 +250,7 @@ def workout(request, workout, category):
             }
         )
 
-    category_name = dict(Exercise.CATEGORIES)[category.upper()]
+    category_name = dict(Exercise.CATEGORIES)[category]
     return render(
         request,
         "workout.html",

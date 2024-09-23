@@ -23,7 +23,7 @@
               <th class="px-4 py-2">Today</th>
               <th class="px-4 py-2">
                 {% if last_workout %}
-                {{ last_workout.date|timesince:current_date }} Ago
+                {{ last_workout.date|timesince }} Ago
                 {% else %}
                 --
                 {% endif %}
@@ -55,28 +55,31 @@
               <form method="post">
                 <div class="mb-4">
                   {% csrf_token %}
+                  <input type="hidden" name="next_url" value="{{ next_url }}" />
                   <label class="block text-gray-700 font-bold mb-2" for="reps">Reps</label>
                   <input
                     class="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    id="reps" type="number" placeholder="Enter reps">
+                    name="reps" type="number" placeholder="Enter reps">
                 </div>
                 <div class="mb-4">
                   <label class="block text-gray-700 font-bold mb-2" for="pounds">Pounds</label>
                   <input
                     class="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    id="pounds" type="number" placeholder="Enter pounds">
+                    name="pounds" type="number" placeholder="Enter pounds">
                 </div>
                 <div class="mb-4">
                   <label class="block text-gray-700 font-bold mb-2" for="note">Note</label>
                   <textarea
                     class="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    id="note" rows="2" placeholder="Enter note"></textarea>
+                    name="note" rows="2" placeholder="Enter note"></textarea>
                 </div>
                 <div class="flex items-center justify-between">
                   <a href="{{ prev_url | safe }}"
                     class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Back</a>
+                  {% if next_url %}
                   <a href="{{ next_url | safe }}"
                     class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Skip</a>
+                  {% endif %}
                   <input
                     class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
                     type="submit" name="action" value="Next">
