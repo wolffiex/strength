@@ -94,29 +94,33 @@ def save_workout(selected_exercises):
             )
 
 
-def get_exercises(workout):
-    return list(workout.exercises.order_by("order"))
-
-
 def next_workout(request):
     workout = Workout.objects.filter(completed=False).get()
     if request.method == "POST":
+        print(request.POST["selected_exercises"])
         save_workout(json.loads(request.POST["selected_exercises"]))
-        return redirect("next_workout")
+        return redirect(reverse("next_workout"))
 
     selection = request.GET.get("selected_exercises", None)
-    exercise_pks = json.loads(selection) if selection else get_exercises(workout)
+    exercises = None
+    if selection:
+        selection_list = json.loads(selection)
+        objects = Exercise.objects.in_bulk(selection_list)
+        exercises = [objects[pk] for pk in selection_list]
+    else:
+        workout_exercises = workout.exercises.order_by("order").select_related("exercise")
+        exercises = [exer.exercise for exer in workout_exercises]
 
-    assert exercise_pks
-    qset = Exercise.objects.in_bulk(exercise_pks)
+
+    print(selection)
+    print(exercises)
 
     supersets = []
     selected_exercises = []
     for category, category_name in Exercise.CATEGORIES:
         set_count = SUPERSETS[category]
         filtered_exercises = []
-        for pk in exercise_pks:
-            exercise = qset[int(pk)]
+        for exercise in exercises:
             if exercise.category == category:
                 filtered_exercises.append((len(selected_exercises), exercise))
                 selected_exercises.append(exercise.pk)
