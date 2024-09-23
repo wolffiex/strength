@@ -60,6 +60,7 @@ class Set(models.Model):
         WorkoutExercise, on_delete=models.CASCADE, related_name="sets"
     )
 
+    set_num = models.PositiveIntegerField()
     reps = models.PositiveIntegerField(null=True, blank=True)
     seconds = models.PositiveIntegerField(null=True, blank=True)
     pounds = models.PositiveIntegerField(null=True, blank=True)

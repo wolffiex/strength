@@ -1,5 +1,6 @@
 import json
 from django.shortcuts import render, redirect
+from django.urls import reverse
 from django.db import transaction
 from django.db.models import Max, Case, When, DateField, F
 from exercise.models import Exercise, Workout, Set, WorkoutExercise
@@ -65,7 +66,7 @@ def index(request):
     return render(request, "index.html", context, status=201)
 
 
-SUPERSETS = {  # Category: (exercises, sets)
+SUPERSETS = {  # Category: sets
     "COND": 2,
     "MAIN": 4,
     "ACCE": 3,
@@ -93,20 +94,18 @@ def save_workout(selected_exercises):
             )
 
 
-def load_next_selected():
-    workout = Workout.objects.filter(completed=False).get()
-    return list(
-        workout.exercises.order_by("order").values_list("exercise__id", flat=True)
-    )
+def get_exercises(workout):
+    return list(workout.exercises.order_by("order"))
 
 
 def next_workout(request):
+    workout = Workout.objects.filter(completed=False).get()
     if request.method == "POST":
         save_workout(json.loads(request.POST["selected_exercises"]))
         return redirect("next_workout")
 
     selection = request.GET.get("selected_exercises", None)
-    exercise_pks = json.loads(selection) if selection else load_next_selected()
+    exercise_pks = json.loads(selection) if selection else get_exercises(workout)
 
     assert exercise_pks
     qset = Exercise.objects.in_bulk(exercise_pks)
@@ -137,27 +136,77 @@ def next_workout(request):
     )
 
 
-def exercise_set(request, set_num, exercise_num):
-    exercises = load_next_selected()
-    exercise = Exercise.objects.get(pk=exercises[exercise_num])
-    incomplete_workout = Workout.objects.get(completed=False)
-    workout_exercise = WorkoutExercise.objects.get(
-        workout=incomplete_workout, exercise=exercise
-    )
-    today_sets = map(lambda s: s.render(), Set.objects.filter(exercise=workout_exercise))
+def gen_workout_steps(workout):
+    exercises = list(Workout.objects.get(pk=workout).exercises.order_by("order"))
+    for category, set_count in SUPERSETS.items():
+        yield ("workout", (workout, category))
+        for set_num in range(0, set_count):
+            for exercise in filter(
+                lambda wo: wo.exercise.category == category, exercises
+            ):
+                yield (
+                    "workout_set",
+                    (set_num + 1, exercise.pk),
+                )
+
+
+def workout_step(_, workout, step):
+    view_name, args = list(gen_workout_steps(workout))[step]
+    return redirect(view_name, *args, permanent=False)
+
+
+def lookup_step(request_path, workout):
+    n = 0
+    for view_name, args in gen_workout_steps(workout):
+        print(args)
+        path = reverse(view_name, args=args)
+        if path == request_path:
+            return n
+        n += 1
+    raise ValueError(f"Step not found for {request_path}")
+
+
+def workout_set(request, set_num, exercise):
+    if request.method == "POST":
+        new_set = Set(exercise=exercise, set_num=set_num)
+        new_set.save()
+
+    today_sets = map(lambda s: s.render(), Set.objects.filter(exercise=exercise))
+    wo = WorkoutExercise.objects.get(pk=exercise)
+    step = lookup_step(request.path, wo.workout_id)
 
     try:
         last_workout = Workout.objects.filter(
-            completed=True,
-            exercises__exercise=exercise
-        ).latest('date')
-        workout_exercise = WorkoutExercise.objects.get(workout=last_workout, exercise=exercise)
-        last_sets = map(lambda s: s.render(), Set.objects.filter(exercise=workout_exercise))
+            completed=True, exercises__exercise=exercise
+        ).latest("date")
+        last_exercise = WorkoutExercise.objects.get(
+            workout=last_workout, exercise=exercise.exercise
+        )
+        last_sets = map(
+            lambda s: s.render(), Set.objects.filter(exercise=last_exercise)
+        )
     except Workout.DoesNotExist:
         last_sets = []
 
+    prev_url = (
+        None if step == 0 else reverse("workout_step", args=(wo.workout_id, step - 1))
+    )
+    next_url = (
+        None if step == 0 else reverse("workout_step", args=(wo.workout_id, step + 1))
+    )
     return render(
         request,
         "set.html",
-        {"exercise": exercise, "set_num": set_num, "today_sets": today_sets, "last_sets": last_sets},
+        {
+            "exercise": wo,
+            "set_num": set_num,
+            "today_sets": today_sets,
+            "last_sets": last_sets,
+            "prev_url": prev_url,
+            "next_url": next_url,
+        },
     )
+
+
+def workout(request, cateworkout, category):
+    pass
