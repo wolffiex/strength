@@ -52,6 +52,10 @@ class WorkoutExercise(models.Model):
     def name(self):
         return self.exercise.name
 
+    @property
+    def category(self):
+        return self.exercise.category
+
     def __str__(self):
         description = f"{self.exercise.name} on {self.workout}"
         if self.order is not None:

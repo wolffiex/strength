@@ -56,16 +56,21 @@
                 <div class="mb-4">
                   {% csrf_token %}
                   <input type="hidden" name="next_url" value="{{ next_url }}" />
+                  {% if current_set %}
+                  <input type="hidden" name="existing_set" value="{{ current_set.pk }}" />
+                  {% endif %}
                   <label class="block text-gray-700 font-bold mb-2" for="reps">Reps</label>
                   <input
                     class="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    name="reps" type="number" placeholder="Enter reps">
+                    name="reps" type="number" placeholder="Enter reps"
+                    {% if current_set %}value="{{ current_set.reps }}"{% endif %}>
                 </div>
                 <div class="mb-4">
                   <label class="block text-gray-700 font-bold mb-2" for="pounds">Pounds</label>
                   <input
                     class="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    name="pounds" type="number" placeholder="Enter pounds">
+                    name="pounds" type="number" placeholder="Enter pounds"
+                    {% if current_set %}value="{{ current_set.pounds }}"{% endif %}>
                 </div>
                 <div class="mb-4">
                   <label class="block text-gray-700 font-bold mb-2" for="note">Note</label>

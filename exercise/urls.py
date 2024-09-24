@@ -1,6 +1,13 @@
 from django.urls import path
 
-from exercise.views import index, next_workout, workout_step, workout_set, workout
+from exercise.views import (
+    index,
+    next_workout,
+    workout_step,
+    workout_set,
+    workout,
+    workout_summary,
+)
 
 urlpatterns = [
     path("", index, name="index"),
@@ -10,4 +17,5 @@ urlpatterns = [
     path(
         "workout-set/<int:set_num>/wo/<int:exercise>/", workout_set, name="workout_set"
     ),
+    path("workouts/<int:workout>/", workout_summary, name="workout_summary"),
 ]

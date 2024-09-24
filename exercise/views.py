@@ -2,7 +2,7 @@ import json
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.db import transaction
-from django.db.models import Max, Case, When, DateField, F
+from django.db.models import Max, Case, When, DateField, F, Prefetch
 from exercise.models import Exercise, Workout, Set, WorkoutExercise
 
 
@@ -170,12 +170,19 @@ def get_step_urls(request_path, workout_pk):
 
     def get_url(dir):
         new_step = step + dir
-        if new_step >= 0 and new_step<count:
+        if new_step >= 0 and new_step < count:
             return reverse("workout_step", args=(workout_pk, step + dir))
 
         return None
 
     return {"prev_url": get_url(-1), "next_url": get_url(1)}
+
+
+def get_set(exercise, set_num):
+    try:
+        return Set.objects.get(exercise=exercise, set_num=set_num)
+    except Set.DoesNotExist:
+        return None
 
 
 def workout_set(request, set_num, exercise):
@@ -186,12 +193,12 @@ def workout_set(request, set_num, exercise):
         reps = int(reps) if reps else None
         pounds = int(pounds) if pounds else None
         next_url = request.POST.get("next_url", None)
-        new_set = Set(exercise=wo, set_num=set_num, reps=reps, pounds=pounds)
+        pk = request.POST.get("existing_set", None)
+        new_set = Set(exercise=wo, set_num=set_num, reps=reps, pounds=pounds, pk=pk)
         new_set.save()
         return redirect(next_url)
 
     today_sets = map(lambda s: s.render(), Set.objects.filter(exercise=wo))
-
     last_workout = None
     try:
         last_workout = Workout.objects.filter(
@@ -211,6 +218,7 @@ def workout_set(request, set_num, exercise):
         "set.html",
         {
             "exercise": wo,
+            "current_set": get_set(wo.pk, set_num),
             "set_num": set_num,
             "today_sets": today_sets,
             "last_sets": last_sets,
@@ -222,9 +230,7 @@ def workout_set(request, set_num, exercise):
 
 def workout(request, workout, category):
     workout = Workout.objects.get(pk=workout)
-    exercises = workout.exercises.filter(exercise__category=category).order_by(
-        "order"
-    )
+    exercises = workout.exercises.filter(exercise__category=category).order_by("order")
 
     exercise_data = []
     for exercise in exercises:
@@ -261,3 +267,45 @@ def workout(request, workout, category):
             **get_step_urls(request.path, workout.pk),
         },
     )
+
+
+def workout_summary(request, workout):
+    workout = Workout.objects.prefetch_related(
+        Prefetch(
+            "exercises",
+            queryset=WorkoutExercise.objects.select_related(
+                "exercise"
+            ).prefetch_related("sets"),
+        )
+    ).get(pk=workout)
+    # Fetch the next and previous workouts by date
+    next_workout = (
+        Workout.objects.filter(date__gt=workout.date).order_by("date").first()
+    )
+    prev_workout = (
+        Workout.objects.filter(date__lt=workout.date).order_by("-date").first()
+    )
+    supersets = []
+    for category, category_name in Exercise.CATEGORIES:
+        exercises = workout.exercises.filter(exercise__category=category)
+        exercise_data = []
+        for exercise in exercises:
+            exercise_data.append(
+                {
+                    "name": exercise.name,
+                    "sets": map(lambda s: s.render(), exercise.sets.all()),
+                }
+            )
+        superset = {
+            "name": category_name,
+            "exercises": exercise_data,
+        }
+        supersets.append(superset)
+    context = {
+        "workout": workout,
+        "supersets": supersets,
+        "next_workout": next_workout,
+        "prev_workout": prev_workout,
+    }
+
+    return render(request, "workout_summary.html", context)
