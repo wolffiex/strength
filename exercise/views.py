@@ -105,7 +105,7 @@ def next_workout(request):
     if selection:
         selection_list = json.loads(selection)
         objects = Exercise.objects.in_bulk(selection_list)
-        exercises = [objects[pk] for pk in selection_list]
+        exercises = [objects[int(pk)] for pk in selection_list]
     else:
         workout_exercises = workout.exercises.order_by("order").select_related(
             "exercise"

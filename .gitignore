@@ -6,3 +6,4 @@ dist/
 **/*.json
 **/workouts/**
 *dump*
+.env
