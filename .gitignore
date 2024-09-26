@@ -7,3 +7,4 @@ dist/
 **/workouts/**
 *dump*
 .env
+staticfiles/**

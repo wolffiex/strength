@@ -18,12 +18,18 @@
     <form method="post">
       {% csrf_token %}
       <div class="flex justify-center mt-8">
-        <a href="/" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded mr-4">
+        <a href="{% url 'index' %}" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded mr-4">
           Back
         </a>
+        {% if needs_save %}
         <button type="submit" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
           Save
         </button>
+        {% else %}
+        <a href="{% url 'workout_step' workout.pk 0 %}" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded mr-4">
+          Start
+        </a>
+        {% endif %}
       </div>
       <input type="hidden" name="selected_exercises" value="{{ selected_exercises|safe }}">
     </form>

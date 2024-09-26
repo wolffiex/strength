@@ -101,6 +101,7 @@ def next_workout(request):
         return redirect(reverse("next_workout"))
 
     selection = request.GET.get("selected_exercises", None)
+    needs_save = bool(selection)
     exercises = None
     if selection:
         selection_list = json.loads(selection)
@@ -131,8 +132,10 @@ def next_workout(request):
         request,
         "new_workout.html",
         {
+            "workout": workout,
             "supersets": supersets,
             "selected_exercises": json.dumps(selected_exercises),
+            "needs_save": needs_save,
         },
     )
 
