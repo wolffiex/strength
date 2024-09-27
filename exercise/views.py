@@ -6,64 +6,46 @@ from django.db.models import Max, Case, When, DateField, F, Prefetch
 from exercise.models import Exercise, Workout, Set, WorkoutExercise
 
 
-def fetch_sets(exercise):
+def fetch_set_and_date(exercise):
     latest_workout_exercise = (
         exercise.workoutexercise_set.filter(workout__completed=True)
         .order_by("-workout__date")
+        .select_related("workout")
         .first()
     )
     if not latest_workout_exercise:
-        return []
+        return [], None
 
-    sets = []
-    for set_instance in latest_workout_exercise.sets.all():
-        rep_str = (
-            f"{set_instance.reps} reps"
-            if set_instance.reps
-            else f"{set_instance.seconds} seconds"
-        )
+    set = ""
+    if set_instance := latest_workout_exercise.sets.order_by("-set_num").first():
+        set = set_instance.render()
 
-        weight_str = (
-            f" at {set_instance.pounds} lbs"
-            if set_instance.pounds
-            else f" {set_instance.resistance}"
-            if set_instance.resistance
-            else ""
-        )
-
-    sets.append(f"{rep_str}{weight_str}")
-
-    return sets
+    return set, latest_workout_exercise.workout.date
 
 
 def index(request):
     exercises_by_category = {}
 
     for category, category_name in Exercise.CATEGORIES:
-        exercises = (
-            Exercise.objects.filter(category=category)
-            .annotate(
-                latest_date=Case(
-                    When(
-                        workoutexercise__workout__completed=True,
-                        then=Max("workoutexercise__workout__date"),
-                    ),
-                    default=None,
-                    output_field=DateField(),
-                )
-            )
-            .order_by(F("latest_date").asc(nulls_first=True))
-        )
+        exercises = Exercise.objects.filter(category=category)
 
-        exercises_by_category[category_name] = [
-            {"exercise": exercise, "sets": fetch_sets(exercise)}
-            for exercise in exercises
-        ]
+        exercises_by_category[category_name] = []
+        for exercise in exercises:
+            set, latest_date = fetch_set_and_date(exercise)
+            exercises_by_category[category_name].append(
+                {"exercise": exercise, "set": set, "latest_date": latest_date}
+            )
+
+        # Sort exercises by latest_date
+        exercises_by_category[category_name].sort(
+            key=lambda x: (x["latest_date"] is None, x["latest_date"])
+        )
 
     context = {
         "exercises_by_category": exercises_by_category,
     }
-    return render(request, "index.html", context, status=201)
+
+    return render(request, "index.html", context)
 
 
 SUPERSETS = {  # Category: sets

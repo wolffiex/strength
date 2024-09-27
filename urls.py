@@ -19,4 +19,7 @@ from django.contrib import admin
 from django.urls import path
 from django.urls import include
 
-urlpatterns = [path("strength/admin/", admin.site.urls), path("strength/", include("exercise.urls"))]
+urlpatterns = [
+    path("strength/admin/", admin.site.urls),
+    path("strength/", include("exercise.urls")),
+]
