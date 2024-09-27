@@ -12,6 +12,8 @@ class Exercise(models.Model):
     name = models.CharField(max_length=255)
     category = models.CharField(max_length=4, choices=CATEGORIES)
     note = models.TextField(blank=True)
+    is_sides = models.BooleanField(default=False)
+    is_seconds = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name
@@ -56,6 +58,14 @@ class WorkoutExercise(models.Model):
     def category(self):
         return self.exercise.category
 
+    @property
+    def is_seconds(self):
+        return self.exercise.is_seconds
+
+    @property
+    def is_sides(self):
+        return self.exercise.is_sides
+
     def __str__(self):
         description = f"{self.exercise.name} on {self.workout}"
         if self.order is not None:
@@ -69,28 +79,29 @@ class Set(models.Model):
     )
 
     set_num = models.PositiveIntegerField()
-    reps = models.PositiveIntegerField(null=True, blank=True)
-    seconds = models.PositiveIntegerField(null=True, blank=True)
+    reps_or_secs = models.PositiveIntegerField(null=True, blank=True)
     pounds = models.PositiveIntegerField(null=True, blank=True)
-    resistance = models.CharField(blank=True, max_length=255)
+    note = models.TextField(blank=True)
 
     def render(self):
-        rendering = f"{self.reps} reps"
+        label = "secs" if self.exercise.is_seconds else "reps"
+        rendering = f"{self.reps_or_secs} {label}"
+        if self.exercise.is_sides:
+            rendering += " ea side"
         if self.pounds:
-            rendering += f" x {self.pounds } lbs"
+            rendering += f" x {self.pounds} lbs"
         return rendering
 
     def __str__(self):
-        rep_str = ""
-        if self.reps:
-            rep_str = f"{self.reps} reps"
-        if self.seconds:
-            rep_str += f"{self.seconds} seconds"
+        label = "secs" if self.exercise.is_seconds else "reps"
+        rep_str = f"{self.reps_or_secs} {label}"
+        if self.exercise.is_sides:
+            rep_str += " ea side"
 
         weight_str = ""
         if self.pounds:
             weight_str = f" at {self.pounds} lbs"
-        if self.resistance:
-            weight_str += f" {self.resistance}"
+        if self.note:
+            weight_str += f" {self.note}"
 
         return f"{rep_str}{weight_str} {self.exercise}"

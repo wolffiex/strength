@@ -173,13 +173,15 @@ def get_set(exercise, set_num):
 def workout_set(request, set_num, exercise):
     wo = WorkoutExercise.objects.get(pk=exercise)
     if request.method == "POST":
-        reps = request.POST["reps"]
+        reps_or_secs = request.POST["reps_or_secs"]
         pounds = request.POST["pounds"]
-        reps = int(reps) if reps else None
+        note = request.POST["note"]
+        reps_or_secs = int(reps_or_secs) if reps_or_secs else None
         pounds = int(pounds) if pounds else None
         next_url = request.POST.get("next_url", None)
         pk = request.POST.get("existing_set", None)
-        new_set = Set(exercise=wo, set_num=set_num, reps=reps, pounds=pounds, pk=pk)
+        new_set = Set(exercise=wo, set_num=set_num,
+                      reps_or_secs=reps_or_secs, pounds=pounds, pk=pk, note=note)
         new_set.save()
         return redirect(next_url)
 
@@ -283,6 +285,7 @@ def workout_summary(request, workout):
             )
         superset = {
             "name": category_name,
+            "exercises": exercise_data,
             "exercises": exercise_data,
         }
         supersets.append(superset)

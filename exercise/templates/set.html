@@ -59,11 +59,13 @@
                   {% if current_set %}
                   <input type="hidden" name="existing_set" value="{{ current_set.pk }}" />
                   {% endif %}
-                  <label class="block text-gray-700 font-bold mb-2" for="reps">Reps</label>
+                  <label class="block text-gray-700 font-bold mb-2" for="reps_or_secs">{% if exercise.is_seconds %}Seconds{% else %}Reps{% endif %}{% if exercise.is_sides %}/side {% endif %}:</label>
                   <input
                     class="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    name="reps" type="number" placeholder="Enter reps"
-                    {% if current_set %}value="{{ current_set.reps }}"{% endif %}>
+                    name="reps_or_secs" type="number"
+                    placeholder="Enter {% if exercise.is_seconds %}seconds{% else %}reps{% endif %}"
+
+                    {% if current_set %}value="{{ current_set.reps_or_secs }}"{% endif %}>
                 </div>
                 <div class="mb-4">
                   <label class="block text-gray-700 font-bold mb-2" for="pounds">Pounds</label>
@@ -76,7 +78,8 @@
                   <label class="block text-gray-700 font-bold mb-2" for="note">Note</label>
                   <textarea
                     class="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    name="note" rows="2" placeholder="Enter note"></textarea>
+                    name="note" rows="2" placeholder="Enter note"
+                    >{% if current_set %}{{ current_set.note }}{% endif %}</textarea>
                 </div>
                 <div class="flex items-center justify-between">
                   <a href="{{ prev_url | safe }}"
