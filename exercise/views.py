@@ -77,7 +77,7 @@ def save_workout(selected_exercises):
 
 
 def next_workout(request):
-    workout = Workout.objects.filter(completed=False).get()
+    workout = None
     if request.method == "POST":
         save_workout(json.loads(request.POST["selected_exercises"]))
         return redirect(reverse("next_workout"))
@@ -90,6 +90,7 @@ def next_workout(request):
         objects = Exercise.objects.in_bulk(selection_list)
         exercises = [objects[int(pk)] for pk in selection_list]
     else:
+        workout = Workout.objects.filter(completed=False).get()
         workout_exercises = workout.exercises.order_by("order").select_related(
             "exercise"
         )
