@@ -10,7 +10,7 @@
 </head>
 
 <body class="bg-gray-100">
-  <div class="min-h-screen bg-gray-100 py-6 flex flex-col justify-center sm:py-12">
+  <div class="min-h-screen bg-gray-100 flex flex-col sm:py-12">
     <div class="relative py-3 sm:max-w-xl sm:mx-auto">
       <div class="relative px-4 py-10 bg-white shadow-lg sm:rounded-3xl sm:p-20">
         <div class="flex justify-between items-center mb-4">
@@ -62,7 +62,7 @@
                   <label class="block text-gray-700 font-bold mb-2" for="reps_or_secs">{% if exercise.is_seconds %}Seconds{% else %}Reps{% endif %}{% if exercise.is_sides %}/side {% endif %}:</label>
                   <input
                     class="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    name="reps_or_secs" type="number"
+                    name="reps_or_secs" type="number" inputmode="numeric"
                     placeholder="Enter {% if exercise.is_seconds %}seconds{% else %}reps{% endif %}"
 
                     {% if current_set %}value="{{ current_set.reps_or_secs }}"{% endif %}>
@@ -71,7 +71,7 @@
                   <label class="block text-gray-700 font-bold mb-2" for="pounds">Pounds</label>
                   <input
                     class="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    name="pounds" type="number" placeholder="Enter pounds"
+                    name="pounds" type="number" placeholder="Enter pounds" inputmode="numeric"
                     {% if current_set %}value="{{ current_set.pounds }}"{% endif %}>
                 </div>
                 <div class="mb-4">
