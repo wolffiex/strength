@@ -4,14 +4,13 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('exercise', '0017_remove_set_seconds'),
+        ("exercise", "0017_remove_set_seconds"),
     ]
 
     operations = [
         migrations.AlterUniqueTogether(
-            name='set',
-            unique_together={('exercise', 'set_num')},
+            name="set",
+            unique_together={("exercise", "set_num")},
         ),
     ]

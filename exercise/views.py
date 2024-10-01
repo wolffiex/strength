@@ -18,7 +18,7 @@ def fetch_set_and_date(exercise):
 
     set_str = ""
     if set_instance := latest_workout_exercise.sets.order_by("-set_num").first():
-        set_str = f"{set_instance.pk} - {set_instance.render()}"
+        set_str = set_instance.render()
 
     return set_str, latest_workout_exercise.workout.date
 
