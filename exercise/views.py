@@ -16,11 +16,11 @@ def fetch_set_and_date(exercise):
     if not latest_workout_exercise:
         return [], None
 
-    set = ""
+    set_str = ""
     if set_instance := latest_workout_exercise.sets.order_by("-set_num").first():
-        set = set_instance.render()
+        set_str = f"{set_instance.pk} - {set_instance.render()}"
 
-    return set, latest_workout_exercise.workout.date
+    return set_str, latest_workout_exercise.workout.date
 
 
 def index(request):
@@ -31,9 +31,9 @@ def index(request):
 
         exercises_by_category[category_name] = []
         for exercise in exercises:
-            set, latest_date = fetch_set_and_date(exercise)
+            set_str, latest_date = fetch_set_and_date(exercise)
             exercises_by_category[category_name].append(
-                {"exercise": exercise, "set": set, "latest_date": latest_date}
+                {"exercise": exercise, "set": set_str, "latest_date": latest_date}
             )
 
         # Sort exercises by latest_date
@@ -181,8 +181,14 @@ def workout_set(request, set_num, exercise):
         pounds = int(pounds) if pounds else None
         next_url = request.POST.get("next_url", None)
         pk = request.POST.get("existing_set", None)
-        new_set = Set(exercise=wo, set_num=set_num,
-                      reps_or_secs=reps_or_secs, pounds=pounds, pk=pk, note=note)
+        new_set = Set(
+            exercise=wo,
+            set_num=set_num,
+            reps_or_secs=reps_or_secs,
+            pounds=pounds,
+            pk=pk,
+            note=note,
+        )
         new_set.save()
         return redirect(next_url)
 

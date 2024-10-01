@@ -4,14 +4,13 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('exercise', '0016_rename_reps_set_reps_or_secs'),
+        ("exercise", "0016_rename_reps_set_reps_or_secs"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='set',
-            name='seconds',
+            model_name="set",
+            name="seconds",
         ),
     ]

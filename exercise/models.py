@@ -83,6 +83,9 @@ class Set(models.Model):
     pounds = models.PositiveIntegerField(null=True, blank=True)
     note = models.TextField(blank=True)
 
+    class Meta:
+        unique_together = ["exercise", "set_num"]
+
     def render(self):
         label = "secs" if self.exercise.is_seconds else "reps"
         rendering = f"{self.reps_or_secs} {label}"

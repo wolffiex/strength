@@ -4,25 +4,24 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('exercise', '0013_set_set_num'),
+        ("exercise", "0013_set_set_num"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='set',
-            old_name='resistance',
-            new_name='note',
+            model_name="set",
+            old_name="resistance",
+            new_name="note",
         ),
         migrations.AddField(
-            model_name='exercise',
-            name='is_seconds',
+            model_name="exercise",
+            name="is_seconds",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='exercise',
-            name='is_sides',
+            model_name="exercise",
+            name="is_sides",
             field=models.BooleanField(default=False),
         ),
     ]
