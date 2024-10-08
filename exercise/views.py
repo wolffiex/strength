@@ -135,6 +135,9 @@ def gen_workout_steps(workout):
                     "workout_set",
                     (set_num + 1, exercise.pk),
                 )
+    yield (
+        "workout_summary", (workout,),
+    )
 
 
 def workout_step(_, workout, step):
@@ -272,13 +275,31 @@ def workout_summary(request, workout):
             ).prefetch_related("sets"),
         )
     ).get(pk=workout)
-    # Fetch the next and previous workouts by date
-    next_workout = (
-        Workout.objects.filter(date__gt=workout.date).order_by("date").first()
-    )
-    prev_workout = (
-        Workout.objects.filter(date__lt=workout.date).order_by("-date").first()
-    )
+    if workout.date is not None:
+        # Fetch the next and previous workouts by date
+        next_workout = (
+            Workout.objects.filter(date__gt=workout.date)
+            .order_by("date")
+            .first()
+        )
+        if not next_workout:
+            next_workout = Workout.objects.filter(date__isnull=True).first()
+
+        prev_workout = (
+            Workout.objects.filter(date__lt=workout.date)
+            .order_by("-date")
+            .first()
+        )
+    else:
+        # If workout.date is empty, there's no next workout
+        next_workout = None
+        # Fetch the previous workout by date
+        prev_workout = (
+            Workout.objects.exclude(date=None)
+            .order_by("-date")
+            .first()
+        )
+
     supersets = []
     for category, category_name in Exercise.CATEGORIES:
         exercises = workout.exercises.filter(exercise__category=category)
