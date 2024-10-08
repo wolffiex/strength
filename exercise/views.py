@@ -1,6 +1,8 @@
 import json
+import pytz
 from django.shortcuts import render, redirect
 from django.urls import reverse
+from django.utils import timezone
 from django.db import transaction
 from django.db.models import Max, Case, When, DateField, F, Prefetch
 from exercise.models import Exercise, Workout, Set, WorkoutExercise
@@ -136,7 +138,8 @@ def gen_workout_steps(workout):
                     (set_num + 1, exercise.pk),
                 )
     yield (
-        "workout_summary", (workout,),
+        "finish_workout",
+        (workout,),
     )
 
 
@@ -278,27 +281,19 @@ def workout_summary(request, workout):
     if workout.date is not None:
         # Fetch the next and previous workouts by date
         next_workout = (
-            Workout.objects.filter(date__gt=workout.date)
-            .order_by("date")
-            .first()
+            Workout.objects.filter(date__gt=workout.date).order_by("date").first()
         )
         if not next_workout:
             next_workout = Workout.objects.filter(date__isnull=True).first()
 
         prev_workout = (
-            Workout.objects.filter(date__lt=workout.date)
-            .order_by("-date")
-            .first()
+            Workout.objects.filter(date__lt=workout.date).order_by("-date").first()
         )
     else:
         # If workout.date is empty, there's no next workout
         next_workout = None
         # Fetch the previous workout by date
-        prev_workout = (
-            Workout.objects.exclude(date=None)
-            .order_by("-date")
-            .first()
-        )
+        prev_workout = Workout.objects.exclude(date=None).order_by("-date").first()
 
     supersets = []
     for category, category_name in Exercise.CATEGORIES:
@@ -325,3 +320,19 @@ def workout_summary(request, workout):
     }
 
     return render(request, "workout_summary.html", context)
+
+
+def finish_workout(request, workout):
+    workout = Workout.objects.get(pk=workout)
+    # Create a timezone object for Pacific time
+    pacific_tz = pytz.timezone("US/Pacific")
+
+    # Localize the current date to Pacific time
+    localized_date = timezone.now().astimezone(pacific_tz).date()
+
+    # Set the date field of the model instance to the localized date
+    workout.date = localized_date
+    workout.completed = True
+    workout.save()
+
+    return redirect(reverse("workout_summary", args=(workout.pk,)))

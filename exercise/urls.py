@@ -7,6 +7,7 @@ from exercise.views import (
     workout_set,
     workout,
     workout_summary,
+    finish_workout,
 )
 
 urlpatterns = [
@@ -18,4 +19,5 @@ urlpatterns = [
         "workout-set/<int:set_num>/wo/<int:exercise>/", workout_set, name="workout_set"
     ),
     path("workouts/<int:workout>/", workout_summary, name="workout_summary"),
+    path("finish-workout/<int:workout>/", finish_workout, name="finish_workout"),
 ]

@@ -18,6 +18,7 @@ psycopg2-binary==2.9.9
 ptyprocess==0.7.0
 pure-eval==0.2.3
 pygments==2.18.0
+pytz==2024.2
 rich==13.8.1
 ruff==0.6.2
 six==1.16.0
