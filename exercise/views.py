@@ -275,9 +275,12 @@ def workout_summary(request, workout):
             "exercises",
             queryset=WorkoutExercise.objects.select_related(
                 "exercise"
-            ).prefetch_related("sets"),
+            ).prefetch_related(
+                Prefetch("sets", queryset=Set.objects.order_by("set_num"))
+            ),
         )
     ).get(pk=workout)
+
     if workout.date is not None:
         # Fetch the next and previous workouts by date
         next_workout = (

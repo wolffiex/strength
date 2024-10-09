@@ -13,7 +13,6 @@ mdurl==0.1.2
 parso==0.8.4
 pexpect==4.9.0
 prompt-toolkit==3.0.47
-psycopg2==2.9.9
 psycopg2-binary==2.9.9
 ptyprocess==0.7.0
 pure-eval==0.2.3
