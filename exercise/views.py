@@ -379,3 +379,8 @@ def finish_workout(request, workout):
     workout.save()
 
     return redirect(reverse("workout_summary", args=(workout.pk,)))
+
+def workouts_index(request):
+    workout = Workout.objects.filter(completed=True).order_by('-date').first()
+    return redirect(reverse("workout_summary", args=(workout.pk,)))
+

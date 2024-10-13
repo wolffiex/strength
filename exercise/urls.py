@@ -10,6 +10,7 @@ from exercise.views import (
     prev_category,
     workout_summary,
     finish_workout,
+    workouts_index,
 )
 
 urlpatterns = [
@@ -22,6 +23,7 @@ urlpatterns = [
     path(
         "workout-set/<int:set_num>/wo/<int:exercise>/", workout_set, name="workout_set"
     ),
+    path("workouts/", workouts_index, name="workouts_index"),
     path("workouts/<int:workout>/", workout_summary, name="workout_summary"),
     path("finish-workout/<int:workout>/", finish_workout, name="finish_workout"),
 ]
