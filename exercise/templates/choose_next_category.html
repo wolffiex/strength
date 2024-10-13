@@ -12,9 +12,8 @@
 
 <body class="bg-gray-100">
   <div class="overflow-x-auto mx-auto max-w-[600px]">
-    {% for category, exercises in exercises_by_category.items %}
     <div class="bg-blue-900">
-      <h2 class="text-2xl font-bold mb-4 text-white flex items-center justify-center my-6">{{ category }}</h2>
+      <h2 class="text-2xl font-bold mb-4 text-white flex items-center justify-center my-6">{{ category_name }}</h2>
       <table class="mb-8 w-full">
         <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
           <tr>
@@ -37,8 +36,7 @@
         </tbody>
       </table>
     </div>
-    {% endfor %}
-    <form action="{% url "next_workout" %}">
+    <form action="{% url "next_category" category=category%}">
       <input type="hidden" name="selected_exercises" id="selected_exercises">
       <div class="flex justify-center mt-8">
         <button type="reset" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded mr-4">

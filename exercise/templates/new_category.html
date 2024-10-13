@@ -12,9 +12,7 @@
 <body class="bg-gray-100">
   <div class="overflow-x-auto mx-auto max-w-[600px]">
     {% csrf_token %}
-    {% for superset in supersets %}
     {% include "new_superset.html" with superset=superset %}
-    {% endfor %}
     <form method="post">
       {% csrf_token %}
       <div class="flex justify-center mt-8">
@@ -26,7 +24,7 @@
           Save
         </button>
         {% else %}
-        <a href="{% url 'workout_step' workout.pk 0 %}" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded mr-4">
+        <a href="{% url 'begin_category' category %}" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded mr-4">
           Start
         </a>
         {% endif %}

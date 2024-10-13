@@ -25,29 +25,52 @@ def fetch_set_and_date(exercise):
     return set_str, latest_workout_exercise.workout.date
 
 
-def index(request):
-    exercises_by_category = {}
-
-    for category, category_name in Exercise.CATEGORIES:
-        exercises = Exercise.objects.filter(category=category)
-
-        exercises_by_category[category_name] = []
-        for exercise in exercises:
-            set_str, latest_date = fetch_set_and_date(exercise)
-            exercises_by_category[category_name].append(
-                {"exercise": exercise, "set": set_str, "latest_date": latest_date}
+def index(_):
+    workout = (
+        Workout.objects.prefetch_related(
+            Prefetch(
+                "exercises",
+                queryset=WorkoutExercise.objects.select_related(
+                    "exercise"
+                ).prefetch_related("sets"),
             )
+        )
+        .filter(completed=False)
+        .first()
+    )
 
-        # Sort exercises by latest_date
-        exercises_by_category[category_name].sort(
-            key=lambda x: (x["latest_date"] is None, x["latest_date"])
+    category = Exercise.CATEGORIES[0][0]
+    if workout:
+        existing_categories = workout.exercises.values_list(
+            "exercise__category", flat=True
+        )
+        for cat in Exercise.CATEGORIES:
+            if cat[0] not in existing_categories:
+                category = cat[0]
+                break
+    return redirect("choose_next_category", category)
+
+
+def choose_next_category(request, category: str):
+    exercise_qset = Exercise.objects.filter(category=category)
+
+    exercises = []
+    for exercise in exercise_qset:
+        set_str, latest_date = fetch_set_and_date(exercise)
+        exercises.append(
+            {"exercise": exercise, "set": set_str, "latest_date": latest_date}
         )
 
+    # Sort exercises by latest_date
+    exercises.sort(key=lambda x: (x["latest_date"] is None, x["latest_date"]))
+
     context = {
-        "exercises_by_category": exercises_by_category,
+        "category": category,
+        "category_name": Exercise.get_category_name(category),
+        "exercises": exercises,
     }
 
-    return render(request, "index.html", context)
+    return render(request, "choose_next_category.html", context)
 
 
 SUPERSETS = {  # Category: sets
@@ -58,18 +81,18 @@ SUPERSETS = {  # Category: sets
 }
 
 
-def save_workout(selected_exercises):
+def save_category(category, selected_exercises):
     # Get or create the incomplete workout
     workout, _ = Workout.objects.get_or_create(completed=False)
     # Assert that the workout has no associated sets
     assert not Set.objects.filter(
-        exercise__workout=workout
+        exercise__exercise__category=category, exercise__workout=workout
     ).exists(), "Workout already has associated sets"
 
     # Add new WorkoutExercises based on the selected exercises
     with transaction.atomic():
         # Remove existing WorkoutExercises for the workout
-        workout.exercises.all().delete()
+        workout.exercises.filter(exercise__category=category).delete()
 
         for order, exercise_pk in enumerate(selected_exercises, start=1):
             exercise = Exercise.objects.get(pk=exercise_pk)
@@ -78,11 +101,12 @@ def save_workout(selected_exercises):
             )
 
 
-def next_workout(request):
-    workout = None
+def next_category(request, category):
+    workout = Workout.objects.filter(completed=False).first()
     if request.method == "POST":
-        save_workout(json.loads(request.POST["selected_exercises"]))
-        return redirect(reverse("next_workout"))
+        save_category(category, json.loads(request.POST["selected_exercises"]))
+        # lose the GET Params
+        return redirect("next_category", category)
 
     selection = request.GET.get("selected_exercises", None)
     needs_save = bool(selection)
@@ -92,43 +116,56 @@ def next_workout(request):
         objects = Exercise.objects.in_bulk(selection_list)
         exercises = [objects[int(pk)] for pk in selection_list]
     else:
-        workout = Workout.objects.filter(completed=False).get()
-        workout_exercises = workout.exercises.order_by("order").select_related(
-            "exercise"
+        exercises = (
+            []
+            if not workout
+            else (
+                workout.exercises.filter(exercise__category=category)
+                .order_by("order")
+                .select_related("exercise")
+            )
         )
-        exercises = [exer.exercise for exer in workout_exercises]
 
-    supersets = []
     selected_exercises = []
-    for category, category_name in Exercise.CATEGORIES:
-        set_count = SUPERSETS[category]
-        filtered_exercises = []
-        for exercise in exercises:
-            if exercise.category == category:
-                filtered_exercises.append((len(selected_exercises), exercise))
-                selected_exercises.append(exercise.pk)
-        superset = {
-            "name": category_name,
-            "count": set_count,
-            "exercises": filtered_exercises,
-        }
-        supersets.append(superset)
+    filtered_exercises = []
+    set_count = SUPERSETS[category]
+    for exercise in exercises:
+        filtered_exercises.append((len(selected_exercises), exercise))
+        selected_exercises.append(exercise.pk)
+    superset = {
+        "name": Exercise.get_category_name(category),
+        "count": set_count,
+        "exercises": filtered_exercises,
+    }
     return render(
         request,
-        "new_workout.html",
+        "new_category.html",
         {
             "workout": workout,
-            "supersets": supersets,
+            "category": category,
+            "superset": superset,
             "selected_exercises": json.dumps(selected_exercises),
             "needs_save": needs_save,
         },
     )
 
 
+def begin_category(request, category):
+    workout = Workout.objects.filter(completed=False).get()
+
+    first_exercise = (
+        workout.exercises.filter(exercise__category=category).order_by("order").first()
+    )
+    if not first_exercise:
+        return redirect("next_category", category)
+
+    return redirect("workout_set", set_num=1, exercise=first_exercise.pk)
+
+
 def gen_workout_steps(workout):
     exercises = list(Workout.objects.get(pk=workout).exercises.order_by("order"))
     for category, set_count in SUPERSETS.items():
-        yield ("workout", (workout, category))
+        yield ("choose_next_category", (category,))
         for set_num in range(0, set_count):
             for exercise in filter(
                 lambda wo: wo.exercise.category == category, exercises
@@ -228,8 +265,8 @@ def workout_set(request, set_num, exercise):
     )
 
 
-def workout(request, workout, category):
-    workout = Workout.objects.get(pk=workout)
+def prev_category(request, category):
+    workout = Workout.objects.get(completed=False)
     exercises = workout.exercises.filter(exercise__category=category).order_by("order")
 
     exercise_data = []

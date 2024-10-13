@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Training</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'css/output.css' %}">
+  <script src="{% static 'js/selection.js' %}"></script>
+</head>
+
+<body class="bg-gray-100">
+  <div class="overflow-x-auto mx-auto max-w-[600px]">
+    <div class="bg-blue-900">
+      <h2 class="text-2xl font-bold mb-4 text-white flex items-center justify-center my-6">{{ category_name }}</h2>
+      <table class="mb-8 w-full">
+        <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+          <tr>
+            <th scope="col" class="px-6 py-3">Exercise Name</th>
+            <th scope="col" class="px-6 py-3">Last set</th>
+            <th scope="col" class="px-6 py-3">Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for exercise_data in exercises %}
+          <tr class="border-b bg-gray-800 border-gray-700 text-white" data-pk="{{ exercise_data.exercise.pk }}">
+            <td class="px-6 py-4">{{ exercise_data.exercise.name }}</td>
+            <td class="px-6 py-4">
+                {{ exercise_data.set }}
+              </ul>
+            </td>
+            <td class="px-6 py-4">{{ exercise_data.latest_date|default_if_none:""|date:"M j" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <form action="{% url "next_category" category=category%}">
+      <input type="hidden" name="selected_exercises" id="selected_exercises">
+      <div class="flex justify-center mt-8">
+        <button type="reset" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded mr-4">
+          Reset
+        </button>
+        <button type="submit" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
+          Submit
+        </button>
+      </div>
+    </form>
+    <script>
+      const {clear, get} = makeSelectable("table tbody tr")
+      const form = document.querySelector("form")
+      form.onreset = clear
+
+      const selectedExercisesInput = document.getElementById("selected_exercises");
+      form.onsubmit = function(e) {
+        e.preventDefault()
+        selectedExercisesInput.value = JSON.stringify(get());
+        form.submit()
+      }
+    </script>
+  </div>
+</body>
+
+</html>

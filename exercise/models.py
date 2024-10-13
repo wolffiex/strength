@@ -18,6 +18,13 @@ class Exercise(models.Model):
     def __str__(self):
         return self.name
 
+    @classmethod
+    def get_category_name(cls, key):
+        for category in cls.CATEGORIES:
+            if category[0] == key:
+                return category[1]
+        raise KeyError(f"Invalid category key: {key}")
+
 
 class Workout(models.Model):
     date = models.DateField(null=True, blank=True)
