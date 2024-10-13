@@ -41,9 +41,11 @@ def index(_):
 
     category = Exercise.CATEGORIES[0][0]
     if workout:
-        existing_categories = workout.exercises.values_list(
-            "exercise__category", flat=True
-        )
+        existing_categories = (
+            workout.exercises
+            .filter(sets__isnull=False)
+            .values_list('exercise__category', flat=True)
+            .distinct())
         for cat in Exercise.CATEGORIES:
             if cat[0] not in existing_categories:
                 category = cat[0]
@@ -166,6 +168,7 @@ def gen_workout_steps(workout):
     exercises = list(Workout.objects.get(pk=workout).exercises.order_by("order"))
     for category, set_count in SUPERSETS.items():
         yield ("choose_next_category", (category,))
+        yield ("prev_category", (category,))
         for set_num in range(0, set_count):
             for exercise in filter(
                 lambda wo: wo.exercise.category == category, exercises
