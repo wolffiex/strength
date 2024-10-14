@@ -283,7 +283,7 @@ def prev_category(request, category):
                 workout=last_workout, exercise=exercise.exercise
             )
             last_sets = map(
-                lambda s: s.render(), Set.objects.filter(exercise=last_exercise)
+                lambda s: s.render(), Set.objects.filter(exercise=last_exercise).order_by('set_num')
             )
         except Workout.DoesNotExist:
             last_sets = []
@@ -317,7 +317,7 @@ def workout_summary(request, workout):
                 "exercise"
             ).prefetch_related(
                 Prefetch("sets", queryset=Set.objects.order_by("set_num"))
-            ),
+            ).order_by("order"),
         )
     ).get(pk=workout)
 
@@ -351,7 +351,6 @@ def workout_summary(request, workout):
             )
         superset = {
             "name": category_name,
-            "exercises": exercise_data,
             "exercises": exercise_data,
         }
         supersets.append(superset)
