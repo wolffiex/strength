@@ -152,22 +152,11 @@ def next_category(request, category):
     )
 
 
-def begin_category(request, category):
-    workout = Workout.objects.filter(completed=False).get()
-
-    first_exercise = (
-        workout.exercises.filter(exercise__category=category).order_by("order").first()
-    )
-    if not first_exercise:
-        return redirect("next_category", category)
-
-    return redirect("workout_set", set_num=1, exercise=first_exercise.pk)
-
-
 def gen_workout_steps(workout):
     exercises = list(Workout.objects.get(pk=workout).exercises.order_by("order"))
     for category, set_count in SUPERSETS.items():
         yield ("choose_next_category", (category,))
+        yield ("preview_category", (category,))
         for set_num in range(0, set_count):
             for exercise in filter(
                 lambda wo: wo.exercise.category == category, exercises
@@ -176,7 +165,7 @@ def gen_workout_steps(workout):
                     "workout_set",
                     (set_num + 1, exercise.pk),
                 )
-        yield ("prev_category", (category,))
+        yield ("summarize_category", (category,))
     yield (
         "finish_workout",
         (workout,),
@@ -270,13 +259,16 @@ def workout_set(request, set_num, exercise):
     )
 
 
-def prev_category(request, category):
+def summarize_category(request, category):
     workout = Workout.objects.get(completed=False)
     exercises = workout.exercises.filter(exercise__category=category).order_by("order")
 
     exercise_data = []
     for exercise in exercises:
+        current_sets = list(map(lambda s: s.render(), exercise.sets.all().order_by('set_num')))
+
         last_workout = None
+        last_sets = []
         try:
             last_workout = Workout.objects.filter(
                 completed=True, exercises__exercise=exercise.exercise
@@ -284,24 +276,25 @@ def prev_category(request, category):
             last_exercise = WorkoutExercise.objects.get(
                 workout=last_workout, exercise=exercise.exercise
             )
-            last_sets = map(
+            last_sets = list(map(
                 lambda s: s.render(), Set.objects.filter(exercise=last_exercise).order_by('set_num')
-            )
+            ))
         except Workout.DoesNotExist:
-            last_sets = []
+            pass
 
         exercise_data.append(
             {
                 "last_workout": last_workout,
                 "exercise": exercise,
-                "last_sets": list(last_sets),
+                "current_sets": current_sets,
+                "last_sets": last_sets,
             }
         )
 
     category_name = dict(Exercise.CATEGORIES)[category]
     return render(
         request,
-        "workout.html",
+        "category_summary.html",
         {
             "workout": workout,
             "exercises": exercise_data,
