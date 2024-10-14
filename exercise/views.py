@@ -168,7 +168,6 @@ def gen_workout_steps(workout):
     exercises = list(Workout.objects.get(pk=workout).exercises.order_by("order"))
     for category, set_count in SUPERSETS.items():
         yield ("choose_next_category", (category,))
-        yield ("prev_category", (category,))
         for set_num in range(0, set_count):
             for exercise in filter(
                 lambda wo: wo.exercise.category == category, exercises
@@ -177,6 +176,7 @@ def gen_workout_steps(workout):
                     "workout_set",
                     (set_num + 1, exercise.pk),
                 )
+        yield ("prev_category", (category,))
     yield (
         "finish_workout",
         (workout,),
@@ -238,7 +238,9 @@ def workout_set(request, set_num, exercise):
         new_set.save()
         return redirect(next_url)
 
-    today_sets = map(lambda s: s.render(), Set.objects.filter(exercise=wo))
+    today_sets = map(
+        lambda s: s.render(),
+        Set.objects.filter(exercise=wo).order_by("set_num"))
     last_workout = None
     try:
         last_workout = Workout.objects.filter(
