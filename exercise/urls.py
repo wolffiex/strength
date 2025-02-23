@@ -10,6 +10,7 @@ from exercise.views import (
     workout_summary,
     finish_workout,
     workouts_index,
+    coach_stream,
 )
 
 urlpatterns = [
@@ -25,4 +26,5 @@ urlpatterns = [
     path("workouts/", workouts_index, name="workouts_index"),
     path("workouts/<int:workout>/", workout_summary, name="workout_summary"),
     path("finish-workout/<int:workout>/", finish_workout, name="finish_workout"),
+    path("coach-stream", coach_stream, name="coach_stream"),
 ]

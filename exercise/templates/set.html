@@ -52,6 +52,9 @@
             </tr>
           </tbody>
         </table>
+        <div id="coach-box" class="bg-purple-50 p-4 mb-4 rounded-lg border border-purple-200 min-h-[4em] text-gray-700">
+          Waiting for Claude...
+        </div>
         <div class="space-y-4">
           <form method="post">
             <div class="bg-gray-100 p-4 rounded-lg">
@@ -125,6 +128,20 @@
       updateTimer();
       clearInterval(timerInterval);
     });
+
+    // Connect to SSE stream for coach messages
+    const evtSource = new EventSource("/strength/coach-stream");
+    const coachBox = document.getElementById('coach-box');
+    let currentText = '';
+
+    evtSource.onmessage = function(event) {
+      currentText += event.data + ' ';
+      coachBox.textContent = currentText;
+    };
+
+    evtSource.onerror = function() {
+      evtSource.close();
+    };
   </script>
 </body>
 

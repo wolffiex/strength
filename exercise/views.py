@@ -5,6 +5,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.db import transaction
 from django.db.models import Max, Case, When, DateField, F, Prefetch
+from django.http import StreamingHttpResponse
 from exercise.models import Exercise, Workout, Set, WorkoutExercise
 
 
@@ -379,4 +380,25 @@ def finish_workout(request, workout):
 def workouts_index(request):
     workout = Workout.objects.filter(completed=True).order_by('-date').first()
     return redirect(reverse("workout_summary", args=(workout.pk,)))
+
+
+def stream_coach():
+    """Stream lorem ipsum one word at a time"""
+    import time
+    words = """Lorem ipsum dolor sit amet consectetur adipiscing elit sed do 
+    eiusmod tempor incididunt ut labore et dolore magna aliqua""".split()
+    
+    for word in words:
+        time.sleep(0.3)  # Delay between words
+        yield f"data: {word}\n\n"
+
+
+def coach_stream(request):
+    response = StreamingHttpResponse(
+        streaming_content=stream_coach(),
+        content_type='text/event-stream'
+    )
+    response['Cache-Control'] = 'no-cache'
+    response['X-Accel-Buffering'] = 'no'
+    return response
 
