@@ -89,6 +89,7 @@ class Set(models.Model):
     reps_or_secs = models.PositiveIntegerField(null=True, blank=True)
     pounds = models.PositiveIntegerField(null=True, blank=True)
     note = models.TextField(blank=True)
+    duration_secs = models.PositiveIntegerField(null=True, blank=True, help_text="Time taken to complete the set in seconds")
 
     class Meta:
         unique_together = ["exercise", "set_num"]
@@ -100,6 +101,10 @@ class Set(models.Model):
             rendering += " ea side"
         if self.pounds:
             rendering += f" x {self.pounds} lbs"
+        if self.duration_secs:
+            mins = self.duration_secs // 60
+            secs = self.duration_secs % 60
+            rendering += f" ({mins:02d}:{secs:02d})"
         return rendering
 
     def __str__(self):

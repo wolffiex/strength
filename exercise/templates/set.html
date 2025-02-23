@@ -14,7 +14,10 @@
     <div class="relative py-3 sm:max-w-xl sm:mx-auto">
       <div class="relative px-4 py-10 bg-white shadow-lg sm:rounded-3xl sm:p-20">
         <div class="flex justify-between items-center mb-4">
-          <h1 class="text-2xl font-semibold">{{ exercise.name }}</h1>
+          <div>
+            <h1 class="text-2xl font-semibold">{{ exercise.name }}</h1>
+            <div id="timer" class="text-lg text-gray-600">00:00</div>
+          </div>
           <h2 class="text-gray-600">{{ exercise.exercise.get_category_display }} - Set {{ set_num}}</h2>
         </div>
         <table class="table-fixed w-full border border-gray-200 mb-4">
@@ -56,6 +59,7 @@
                 <div class="mb-4">
                   {% csrf_token %}
                   <input type="hidden" name="next_url" value="{{ next_url }}" />
+                  <input type="hidden" name="duration_secs" id="duration_secs" value="0" />
                   {% if current_set %}
                   <input type="hidden" name="existing_set" value="{{ current_set.pk }}" />
                   {% endif %}
@@ -99,6 +103,29 @@
       </div>
     </div>
   </div>
+  <script>
+    // Start timer when page loads
+    let startTime = Date.now();
+    let timerInterval = setInterval(updateTimer, 1000);
+
+    function formatTime(seconds) {
+      const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+      const secs = (seconds % 60).toString().padStart(2, '0');
+      return `${mins}:${secs}`;
+    }
+
+    function updateTimer() {
+      const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+      document.getElementById('timer').textContent = formatTime(elapsedSeconds);
+      document.getElementById('duration_secs').value = elapsedSeconds;
+    }
+
+    // Update timer before form submission
+    document.querySelector('form').addEventListener('submit', function() {
+      updateTimer();
+      clearInterval(timerInterval);
+    });
+  </script>
 </body>
 
 </html>

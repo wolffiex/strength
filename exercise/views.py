@@ -211,8 +211,10 @@ def workout_set(request, set_num, exercise):
         reps_or_secs = request.POST["reps_or_secs"]
         pounds = request.POST["pounds"]
         note = request.POST["note"]
+        duration_secs = request.POST["duration_secs"]
         reps_or_secs = int(reps_or_secs) if reps_or_secs else None
         pounds = int(pounds) if pounds else None
+        duration_secs = int(duration_secs) if duration_secs else None
         next_url = request.POST.get("next_url", None)
         pk = request.POST.get("existing_set", None)
         new_set = Set(
@@ -222,6 +224,7 @@ def workout_set(request, set_num, exercise):
             pounds=pounds,
             pk=pk,
             note=note,
+            duration_secs=duration_secs,
         )
         new_set.save()
         return redirect(next_url)
