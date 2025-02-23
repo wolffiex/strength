@@ -27,3 +27,4 @@ traitlets==5.14.3
 types-pyyaml==6.0.12.20240808
 typing-extensions==4.12.2
 wcwidth==0.2.13
+anthropic==0.46.0
