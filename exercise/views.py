@@ -383,7 +383,7 @@ def workouts_index(request):
 
 
 def get_exercise_summary(exercise_id):
-    """Generate a workout summary and exercise comparison"""
+    """Generate a workout summary showing exercise history and current progress"""
     # Get the current exercise and its category
     wo = WorkoutExercise.objects.select_related('exercise', 'workout').get(pk=exercise_id)
     category = wo.exercise.category
@@ -395,11 +395,15 @@ def get_exercise_summary(exercise_id):
     ).select_related('exercise').order_by('order')
     
     narrative = []
+    narrative.append(f"== {Exercise.get_category_name(category)} ==")
+    narrative.append(f"Currently on: {wo.exercise.name}")
+    narrative.append("")  # Blank line
     
-    # For each exercise in the category, show its history
-    narrative.append(f"Previous attempts at {Exercise.get_category_name(category)}:")
+    # Show history and today's progress for each exercise
     for exercise in category_exercises:
-        # Get last 2 completed workouts for this exercise
+        narrative.append(f"* {exercise.exercise.name} *")
+
+        # Get previous workouts for this exercise
         previous_sets = Set.objects.filter(
             exercise__exercise=exercise.exercise,
             exercise__workout__completed=True
@@ -412,42 +416,30 @@ def get_exercise_summary(exercise_id):
             if date not in prev_dates:
                 prev_dates[date] = []
             prev_dates[date].append(set)
-        prev_dates = dict(list(prev_dates.items())[:2])  # Keep only last 2 dates
-        
+        prev_dates = dict(sorted(list(prev_dates.items())[:2], reverse=True))  # Last 2 dates
+
+        # Show previous attempts
         if prev_dates:
-            narrative.append(f"\n{exercise.exercise.name}:")
             for date, sets in prev_dates.items():
                 days_ago = (timezone.now().date() - date).days
-                sets_str = "; ".join(s.render() for s in sets)
-                narrative.append(f"  {days_ago} days ago: {sets_str}")
+                sets_str = "; ".join(f"Set {s.set_num}: {s.render()}" for s in sorted(sets, key=lambda x: x.set_num))
+                narrative.append(f"{days_ago} days ago: {sets_str}")
         else:
-            narrative.append(f"\n{exercise.exercise.name}: No previous attempts")
-            
-    # Show today's progress for all exercises in this category
-    narrative.append("\nToday's progress:")
-    for exercise in category_exercises:
+            narrative.append("No previous attempts")
+        
+        # Show today's progress
         today_sets = Set.objects.filter(exercise=exercise).order_by('set_num')
-        if today_sets:
-            sets_str = "; ".join(s.render() for s in today_sets)
-            narrative.append(f"{exercise.exercise.name}: {sets_str}")
-        else:
-            narrative.append(f"{exercise.exercise.name}: Not started")
+        narrative.append("Today: " + (
+            "; ".join(f"Set {s.set_num}: {s.render()}" for s in today_sets)
+            if today_sets else "Not started yet"
+        ))
+        narrative.append("")  # Blank line between exercises
     
     return narrative
 
 
 def generate_coach_stream(exercise_id):
-    """Generate SSE events for summary and coach response"""
-    # First send the summary lines
-    for line in get_exercise_summary(exercise_id):
-        yield f"data: {line}\n\n"
-        
-    # Add a visual separator
-    yield "data: \n\n"  # blank line
-    yield "data: Coach Claude:\n\n"
-    yield "data: " + ("-" * 40) + "\n\n"
-    
-    # Then stream Claude's response
+    """Generate SSE events for coach response"""
     from .coach import get_coach_response
     summary_lines = get_exercise_summary(exercise_id)
     for text in get_coach_response(summary_lines):
