@@ -52,7 +52,7 @@
             </tr>
           </tbody>
         </table>
-        <div id="coach-box" class="bg-purple-50 p-4 mb-4 rounded-lg border border-purple-200 min-h-[4em] text-gray-700">
+        <div id="coach-box" class="bg-purple-50 p-4 mb-4 rounded-lg border border-purple-200 min-h-[4em] text-gray-700 whitespace-pre-line">
           Waiting for Claude...
         </div>
         <div class="space-y-4">
@@ -130,12 +130,12 @@
     });
 
     // Connect to SSE stream for coach messages
-    const evtSource = new EventSource("/strength/coach-stream");
+    const evtSource = new EventSource("/strength/coach-stream/{{ exercise.pk }}/");
     const coachBox = document.getElementById('coach-box');
     let currentText = '';
 
     evtSource.onmessage = function(event) {
-      currentText += event.data + ' ';
+      currentText += event.data + '\n';
       coachBox.textContent = currentText;
     };
 

@@ -382,20 +382,65 @@ def workouts_index(request):
     return redirect(reverse("workout_summary", args=(workout.pk,)))
 
 
-def stream_coach():
-    """Stream lorem ipsum one word at a time"""
+def generate_coach_summary(exercise_id):
+    """Generate a workout summary and exercise comparison"""
     import time
-    words = """Lorem ipsum dolor sit amet consectetur adipiscing elit sed do 
-    eiusmod tempor incididunt ut labore et dolore magna aliqua""".split()
     
-    for word in words:
-        time.sleep(0.3)  # Delay between words
-        yield f"data: {word}\n\n"
+    # Get the current exercise
+    wo = WorkoutExercise.objects.select_related('exercise', 'workout').get(pk=exercise_id)
+    
+    # Get previous sets of this exercise
+    previous_sets = Set.objects.filter(
+        exercise__exercise=wo.exercise,
+        exercise__workout__completed=True
+    ).order_by('-exercise__workout__date')[:10]  # Get last 10 to find last 2 dates
+    
+    # Group by workout date to get last 2 dates
+    prev_dates = {}
+    for set in previous_sets:
+        date = set.exercise.workout.date
+        if date not in prev_dates:
+            prev_dates[date] = []
+        prev_dates[date].append(set)
+    prev_dates = dict(list(prev_dates.items())[:2])  # Keep only last 2 dates
+    
+    # Get today's sets for this exercise
+    today_sets = Set.objects.filter(
+        exercise=wo
+    ).order_by('set_num')
+    
+    # Get sets from other exercises in today's workout
+    other_sets = Set.objects.filter(
+        exercise__workout=wo.workout
+    ).exclude(exercise=wo).order_by('exercise__order', 'set_num')
+    
+    # Generate narrative
+    narrative = []
+    
+    # 1. Today's progress
+    if other_sets:
+        completed = [f"{s.exercise.exercise.name}: {s.render()}" for s in other_sets]
+        narrative.append(f"So far today you've done: {'; '.join(completed)}")
+    
+    # 2. Current exercise history
+    if prev_dates:
+        for date, sets in prev_dates.items():
+            days_ago = (timezone.now().date() - date).days
+            sets_str = "; ".join(s.render() for s in sets)
+            narrative.append(f"{days_ago} days ago: {sets_str}")
+    
+    # 3. Today's sets of current exercise
+    if today_sets:
+        sets_str = "; ".join(s.render() for s in today_sets)
+        narrative.append(f"Today's sets: {sets_str}")
+    
+    for line in narrative:
+        yield f"data: {line}\n\n"
 
 
-def coach_stream(request):
+def coach_stream(request, exercise):
     response = StreamingHttpResponse(
-        streaming_content=stream_coach(),
+        streaming_content=generate_coach_summary(exercise),
         content_type='text/event-stream'
     )
     response['Cache-Control'] = 'no-cache'
