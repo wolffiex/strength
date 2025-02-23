@@ -382,10 +382,8 @@ def workouts_index(request):
     return redirect(reverse("workout_summary", args=(workout.pk,)))
 
 
-def generate_coach_summary(exercise_id):
+def get_exercise_summary(exercise_id):
     """Generate a workout summary and exercise comparison"""
-    import time
-    
     # Get the current exercise
     wo = WorkoutExercise.objects.select_related('exercise', 'workout').get(pk=exercise_id)
     
@@ -434,7 +432,12 @@ def generate_coach_summary(exercise_id):
         sets_str = "; ".join(s.render() for s in today_sets)
         narrative.append(f"Today's sets: {sets_str}")
     
-    for line in narrative:
+    return narrative
+
+
+def generate_coach_summary(exercise_id):
+    """Generate SSE events for each line of the summary"""
+    for line in get_exercise_summary(exercise_id):
         yield f"data: {line}\n\n"
 
 
