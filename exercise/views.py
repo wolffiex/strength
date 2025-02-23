@@ -107,12 +107,11 @@ def next_category(request, category):
     workout = Workout.objects.filter(completed=False).first()
     if request.method == "POST":
         save_category(category, json.loads(request.POST["selected_exercises"]))
-        # lose the GET Params
-        return redirect("next_category", category)
+        return redirect("preview_category", category)
 
     selection = request.GET.get("selected_exercises", None)
-    needs_save = bool(selection)
     exercises = None
+    needs_save = bool(selection)
     if selection:
         selection_list = json.loads(selection)
         objects = Exercise.objects.in_bulk(selection_list)
