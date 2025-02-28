@@ -395,8 +395,47 @@ def get_exercise_summary(exercise_id):
     narrative.append(f"Currently on: {wo.exercise.name}")
     narrative.append("")  # Blank line
     
-    # Show history and today's progress for each exercise
+    # First, add the current exercise information
+    narrative.append(f"* {wo.exercise.name} *")
+    
+    # Get previous workouts for this exercise
+    previous_sets = Set.objects.filter(
+        exercise__exercise=wo.exercise,
+        exercise__workout__completed=True
+    ).order_by('-exercise__workout__date')
+    
+    # Group by workout date
+    prev_dates = {}
+    for set in previous_sets:
+        date = set.exercise.workout.date
+        if date not in prev_dates:
+            prev_dates[date] = []
+        prev_dates[date].append(set)
+    prev_dates = dict(sorted(list(prev_dates.items())[:2], reverse=True))  # Last 2 dates
+
+    # Show previous attempts
+    if prev_dates:
+        for date, sets in prev_dates.items():
+            days_ago = (timezone.now().date() - date).days
+            sets_str = "; ".join(f"Set {s.set_num}: {s.render()}" for s in sorted(sets, key=lambda x: x.set_num))
+            narrative.append(f"{days_ago} days ago: {sets_str}")
+    else:
+        narrative.append("No previous attempts")
+    
+    # Show today's progress
+    today_sets = Set.objects.filter(exercise=wo).order_by('set_num')
+    narrative.append("Today: " + (
+        "; ".join(f"Set {s.set_num}: {s.render()}" for s in today_sets)
+        if today_sets else "Not started yet"
+    ))
+    narrative.append("")  # Blank line between exercises
+    
+    # Add other exercises in the category
     for exercise in category_exercises:
+        # Skip the current exercise since we've already added it
+        if exercise.id == wo.id:
+            continue
+            
         narrative.append(f"* {exercise.exercise.name} *")
 
         # Get previous workouts for this exercise

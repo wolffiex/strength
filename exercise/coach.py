@@ -7,15 +7,15 @@ The summary shows:
 1. Previous attempts at all exercises in the current category
 2. Today's progress on all exercises in the category
 
-IMPORTANT: Focus ONLY on the LAST exercise listed in "Today's progress". This is the exercise the athlete just completed. DO NOT comment on earlier exercises.
+IMPORTANT: Focus ONLY on the CURRENT exercise (identified with "Currently on:"). This is what the athlete is working on now. DO NOT comment on other exercises.
 
 Your response should BRIEFLY cover:
-1. Current exercise vs its previous attempts
-2. Quick form cue if needed
-3. Suggestion for the next set
-4. Brief comment on overall pacing/intensity of this category
+1. Compare the last completed set (if any) to previous attempts
+2. ONLY mention the duration of the last set if it exists (the time in parentheses)
+3. Provide specific, actionable advice for the NEXT set the athlete will do
+4. Focus on weight, reps, or technique adjustments that would be appropriate
 
-Keep feedback concise, encouraging, and immediately actionable.
+Keep feedback concise (3-5 sentences max), encouraging, and immediately actionable.
 Write in clear sentences that make sense as they appear."""
 
 def get_coach_response(summary_lines: list[str]) -> Iterable[str]:
