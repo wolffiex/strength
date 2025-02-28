@@ -417,17 +417,29 @@ def get_exercise_summary(exercise_id):
     if prev_dates:
         for date, sets in prev_dates.items():
             days_ago = (timezone.now().date() - date).days
-            sets_str = "; ".join(f"Set {s.set_num}: {s.render()}" for s in sorted(sets, key=lambda x: x.set_num))
+            sets_formatted = []
+            for s in sorted(sets, key=lambda x: x.set_num):
+                set_info = f"Set {s.set_num}: {s.render()}"
+                if s.note:
+                    set_info += f" ({s.note})"
+                sets_formatted.append(set_info)
+            sets_str = "; ".join(sets_formatted)
             narrative.append(f"{days_ago} days ago: {sets_str}")
     else:
         narrative.append("No previous attempts")
     
     # Show today's progress
     today_sets = Set.objects.filter(exercise=wo).order_by('set_num')
-    narrative.append("Today: " + (
-        "; ".join(f"Set {s.set_num}: {s.render()}" for s in today_sets)
-        if today_sets else "Not started yet"
-    ))
+    if today_sets:
+        sets_formatted = []
+        for s in today_sets:
+            set_info = f"Set {s.set_num}: {s.render()}"
+            if s.note:
+                set_info += f" ({s.note})"
+            sets_formatted.append(set_info)
+        narrative.append("Today: " + "; ".join(sets_formatted))
+    else:
+        narrative.append("Today: Not started yet")
     narrative.append("")  # Blank line between exercises
     
     # Add other exercises in the category
@@ -457,17 +469,29 @@ def get_exercise_summary(exercise_id):
         if prev_dates:
             for date, sets in prev_dates.items():
                 days_ago = (timezone.now().date() - date).days
-                sets_str = "; ".join(f"Set {s.set_num}: {s.render()}" for s in sorted(sets, key=lambda x: x.set_num))
+                sets_formatted = []
+                for s in sorted(sets, key=lambda x: x.set_num):
+                    set_info = f"Set {s.set_num}: {s.render()}"
+                    if s.note:
+                        set_info += f" ({s.note})"
+                    sets_formatted.append(set_info)
+                sets_str = "; ".join(sets_formatted)
                 narrative.append(f"{days_ago} days ago: {sets_str}")
         else:
             narrative.append("No previous attempts")
         
         # Show today's progress
         today_sets = Set.objects.filter(exercise=exercise).order_by('set_num')
-        narrative.append("Today: " + (
-            "; ".join(f"Set {s.set_num}: {s.render()}" for s in today_sets)
-            if today_sets else "Not started yet"
-        ))
+        if today_sets:
+            sets_formatted = []
+            for s in today_sets:
+                set_info = f"Set {s.set_num}: {s.render()}"
+                if s.note:
+                    set_info += f" ({s.note})"
+                sets_formatted.append(set_info)
+            narrative.append("Today: " + "; ".join(sets_formatted))
+        else:
+            narrative.append("Today: Not started yet")
         narrative.append("")  # Blank line between exercises
     
     return narrative
