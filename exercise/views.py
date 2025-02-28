@@ -230,9 +230,7 @@ def workout_set(request, set_num, exercise):
         new_set.save()
         return redirect(next_url)
 
-    today_sets = map(
-        lambda s: s.render(),
-        Set.objects.filter(exercise=wo).order_by("set_num"))
+    today_sets = Set.objects.filter(exercise=wo).order_by("set_num")
     last_workout = None
     try:
         last_workout = Workout.objects.filter(
@@ -241,9 +239,7 @@ def workout_set(request, set_num, exercise):
         last_exercise = WorkoutExercise.objects.get(
             workout=last_workout, exercise=wo.exercise
         )
-        last_sets = map(
-            lambda s: s.render(), Set.objects.filter(exercise=last_exercise)
-        )
+        last_sets = Set.objects.filter(exercise=last_exercise)
     except Workout.DoesNotExist:
         last_sets = []
 

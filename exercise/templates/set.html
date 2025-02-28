@@ -38,14 +38,24 @@
               <td class="px-4 py-2 align-top w-1/2">
                 <ul class="list-decimal list-inside">
                   {% for set in today_sets %}
-                  <li>{{ set }} </li>
+                  <li>
+                    {{ set.render }}
+                    {% if set.note %}
+                    <div class="pl-5 text-sm text-gray-600">{{ set.note }}</div>
+                    {% endif %}
+                  </li>
                   {% endfor %}
                 </ul>
               </td>
               <td class="px-4 py-2 align-top text-gray-500 border-l border-gray-200 w-1/2">
                 <ul class="list-decimal list-inside space-y-1">
                   {% for set in last_sets %}
-                  <li>{{ set }} </li>
+                  <li>
+                    {{ set.render }}
+                    {% if set.note %}
+                    <div class="pl-5 text-sm text-gray-500">{{ set.note }}</div>
+                    {% endif %}
+                  </li>
                   {% endfor %}
                 </ul>
               </td>
