@@ -48,9 +48,7 @@ class Workout(models.Model):
 
 
 class WorkoutExercise(models.Model):
-    workout = models.ForeignKey(
-        Workout, on_delete=models.CASCADE, related_name="exercises"
-    )
+    workout = models.ForeignKey(Workout, on_delete=models.CASCADE, related_name="exercises")
     exercise = models.ForeignKey(
         Exercise,
         on_delete=models.PROTECT,
@@ -81,15 +79,15 @@ class WorkoutExercise(models.Model):
 
 
 class Set(models.Model):
-    exercise = models.ForeignKey(
-        WorkoutExercise, on_delete=models.CASCADE, related_name="sets"
-    )
+    exercise = models.ForeignKey(WorkoutExercise, on_delete=models.CASCADE, related_name="sets")
 
     set_num = models.PositiveIntegerField()
     reps_or_secs = models.PositiveIntegerField(null=True, blank=True)
     pounds = models.PositiveIntegerField(null=True, blank=True)
     note = models.TextField(blank=True)
-    duration_secs = models.PositiveIntegerField(null=True, blank=True, help_text="Time taken to complete the set in seconds")
+    duration_secs = models.PositiveIntegerField(
+        null=True, blank=True, help_text="Time taken to complete the set in seconds"
+    )
 
     class Meta:
         unique_together = ["exercise", "set_num"]

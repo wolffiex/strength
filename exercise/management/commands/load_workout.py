@@ -16,14 +16,10 @@ class Command(BaseCommand):
 
             sep4 = get_workout_data()
             # Process the workout data
-            for exercise_data in [
-                item for sublist in sep4.values() for item in sublist
-            ]:
+            for exercise_data in [item for sublist in sep4.values() for item in sublist]:
                 print(exercise_data)
                 exercise = Exercise.objects.get(pk=exercise_data["pk"])
-                workout_exercise = WorkoutExercise.objects.create(
-                    workout=workout, exercise=exercise
-                )
+                workout_exercise = WorkoutExercise.objects.create(workout=workout, exercise=exercise)
 
                 for set_data in exercise_data["sets"]:
                     Set.objects.create(

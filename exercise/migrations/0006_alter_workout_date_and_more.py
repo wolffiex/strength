@@ -17,9 +17,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="workout",
             constraint=models.CheckConstraint(
-                condition=models.Q(
-                    ("completed", False), ("date__isnull", False), _connector="OR"
-                ),
+                condition=models.Q(("completed", False), ("date__isnull", False), _connector="OR"),
                 name="completed_workout_date_not_null",
             ),
         ),

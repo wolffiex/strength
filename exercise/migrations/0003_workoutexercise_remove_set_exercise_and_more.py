@@ -97,9 +97,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="workoutexercise",
             name="exercise",
-            field=models.ForeignKey(
-                on_delete=django.db.models.deletion.CASCADE, to="exercise.exercise"
-            ),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to="exercise.exercise"),
         ),
         migrations.AddField(
             model_name="workoutexercise",
@@ -123,9 +121,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name="workoutexercise",
-            constraint=models.UniqueConstraint(
-                fields=("workout", "exercise"), name="unique_workout_exercise"
-            ),
+            constraint=models.UniqueConstraint(fields=("workout", "exercise"), name="unique_workout_exercise"),
         ),
         migrations.AddConstraint(
             model_name="workoutexercise",

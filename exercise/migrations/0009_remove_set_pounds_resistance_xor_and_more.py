@@ -16,9 +16,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="set",
             constraint=models.CheckConstraint(
-                condition=models.Q(
-                    ("pounds__isnull", False), ("resistance__gt", ""), _connector="OR"
-                ),
+                condition=models.Q(("pounds__isnull", False), ("resistance__gt", ""), _connector="OR"),
                 name="pounds_resistance_or",
             ),
         ),
