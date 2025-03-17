@@ -31,9 +31,7 @@ def index(_):
         Workout.objects.prefetch_related(
             Prefetch(
                 "exercises",
-                queryset=WorkoutExercise.objects.select_related(
-                    "exercise"
-                ).prefetch_related("sets"),
+                queryset=WorkoutExercise.objects.select_related("exercise").prefetch_related("sets"),
             )
         )
         .filter(completed=False)
@@ -43,10 +41,8 @@ def index(_):
     category = Exercise.CATEGORIES[0][0]
     if workout:
         existing_categories = (
-            workout.exercises
-            .filter(sets__isnull=False)
-            .values_list('exercise__category', flat=True)
-            .distinct())
+            workout.exercises.filter(sets__isnull=False).values_list("exercise__category", flat=True).distinct()
+        )
         for cat in Exercise.CATEGORIES:
             if cat[0] not in existing_categories:
                 category = cat[0]
@@ -60,9 +56,7 @@ def choose_next_category(request, category: str):
     exercises = []
     for exercise in exercise_qset:
         set_str, latest_date = fetch_set_and_date(exercise)
-        exercises.append(
-            {"exercise": exercise, "set": set_str, "latest_date": latest_date}
-        )
+        exercises.append({"exercise": exercise, "set": set_str, "latest_date": latest_date})
 
     # Sort exercises by latest_date
     exercises.sort(key=lambda x: (x["latest_date"] is None, x["latest_date"]))
@@ -99,9 +93,7 @@ def save_category(category, selected_exercises):
 
         for order, exercise_pk in enumerate(selected_exercises, start=1):
             exercise = Exercise.objects.get(pk=exercise_pk)
-            WorkoutExercise.objects.create(
-                workout=workout, exercise=exercise, order=order
-            )
+            WorkoutExercise.objects.create(workout=workout, exercise=exercise, order=order)
 
 
 def next_category(request, category):
@@ -121,11 +113,7 @@ def next_category(request, category):
         exercises = (
             []
             if not workout
-            else (
-                workout.exercises.filter(exercise__category=category)
-                .order_by("order")
-                .select_related("exercise")
-            )
+            else (workout.exercises.filter(exercise__category=category).order_by("order").select_related("exercise"))
         )
 
     selected_exercises = []
@@ -158,9 +146,7 @@ def gen_workout_steps(workout):
         yield ("choose_next_category", (category,))
         yield ("preview_category", (category,))
         for set_num in range(0, set_count):
-            for exercise in filter(
-                lambda wo: wo.exercise.category == category, exercises
-            ):
+            for exercise in filter(lambda wo: wo.exercise.category == category, exercises):
                 yield (
                     "workout_set",
                     (set_num + 1, exercise.pk),
@@ -233,12 +219,8 @@ def workout_set(request, set_num, exercise):
     today_sets = Set.objects.filter(exercise=wo).order_by("set_num")
     last_workout = None
     try:
-        last_workout = Workout.objects.filter(
-            completed=True, exercises__exercise=wo.exercise
-        ).latest("date")
-        last_exercise = WorkoutExercise.objects.get(
-            workout=last_workout, exercise=wo.exercise
-        )
+        last_workout = Workout.objects.filter(completed=True, exercises__exercise=wo.exercise).latest("date")
+        last_exercise = WorkoutExercise.objects.get(workout=last_workout, exercise=wo.exercise)
         last_sets = Set.objects.filter(exercise=last_exercise)
     except Workout.DoesNotExist:
         last_sets = []
@@ -258,39 +240,94 @@ def workout_set(request, set_num, exercise):
     )
 
 
-def summarize_category(request, category):
-    workout = Workout.objects.get(completed=False)
+def summarize_category(request, category, workout_id=None):
+    """
+    Summarize exercises in a category.
+
+    If workout_id is provided, show the summary for that specific workout.
+    Otherwise, show the summary for the active (uncompleted) workout.
+    """
+    # Get the workout - either specified by ID or the active one
+    if workout_id:
+        try:
+            workout = Workout.objects.get(pk=workout_id)
+        except Workout.DoesNotExist:
+            return redirect("workouts_index")
+    else:
+        try:
+            workout = Workout.objects.get(completed=False)
+        except Workout.DoesNotExist:
+            # No active workout, create one
+            workout = Workout.objects.create(completed=False)
+
+    # Get exercises for this category in the workout
     exercises = workout.exercises.filter(exercise__category=category).order_by("order")
+
+    # If no exercises found for this category in this workout
+    if not exercises.exists() and not workout_id:
+        # This is for active workouts only - redirect to choose exercises
+        return redirect("choose_next_category", category)
 
     exercise_data = []
     for exercise in exercises:
-        current_sets = list(map(lambda s: s.render(), exercise.sets.all().order_by('set_num')))
+        current_sets = list(map(lambda s: s.render(), exercise.sets.all().order_by("set_num")))
 
-        last_workout = None
-        last_sets = []
-        try:
-            last_workout = Workout.objects.filter(
-                completed=True, exercises__exercise=exercise.exercise
-            ).latest("date")
-            last_exercise = WorkoutExercise.objects.get(
-                workout=last_workout, exercise=exercise.exercise
+        # For previous workout comparison
+        # For a past workout view, we want to compare with the workout before that one
+        # For active workout, we want to compare with the last completed workout
+        if workout.completed:
+            # Find the previous workout with this exercise before the current one
+            last_workout = (
+                Workout.objects.filter(completed=True, exercises__exercise=exercise.exercise, date__lt=workout.date)
+                .order_by("-date")
+                .first()
             )
-            last_sets = list(map(
-                lambda s: s.render(), Set.objects.filter(exercise=last_exercise).order_by('set_num')
-            ))
-        except Workout.DoesNotExist:
-            pass
+        else:
+            # Find the last completed workout with this exercise
+            last_workout = (
+                Workout.objects.filter(completed=True, exercises__exercise=exercise.exercise).order_by("-date").first()
+            )
+
+        last_sets = []
+        if last_workout:
+            try:
+                last_exercise = WorkoutExercise.objects.get(workout=last_workout, exercise=exercise.exercise)
+                last_sets = list(
+                    map(lambda s: s.render(), Set.objects.filter(exercise=last_exercise).order_by("set_num"))
+                )
+            except WorkoutExercise.DoesNotExist:
+                pass
 
         exercise_data.append(
             {
-                "last_workout": last_workout,
                 "exercise": exercise,
                 "current_sets": current_sets,
                 "last_sets": last_sets,
+                "last_workout": last_workout,
             }
         )
 
     category_name = dict(Exercise.CATEGORIES)[category]
+
+    # Navigation buttons are only relevant for the active workout
+    nav_urls = get_step_urls(request.path, workout.pk) if not workout_id else {}
+
+    # If viewing a past workout, also show links to go to next/previous workouts with same category
+    prev_workout = None
+    next_workout = None
+    if workout.completed:
+        prev_workout = (
+            Workout.objects.filter(completed=True, date__lt=workout.date, exercises__exercise__category=category)
+            .order_by("-date")
+            .first()
+        )
+
+        next_workout = (
+            Workout.objects.filter(completed=True, date__gt=workout.date, exercises__exercise__category=category)
+            .order_by("date")
+            .first()
+        )
+
     return render(
         request,
         "category_summary.html",
@@ -298,7 +335,11 @@ def summarize_category(request, category):
             "workout": workout,
             "exercises": exercise_data,
             "category": category_name,
-            **get_step_urls(request.path, workout.pk),
+            "category_code": category,
+            "is_past_workout": workout.completed,
+            "prev_workout": prev_workout,
+            "next_workout": next_workout,
+            **nav_urls,
         },
     )
 
@@ -307,25 +348,19 @@ def workout_summary(request, workout):
     workout = Workout.objects.prefetch_related(
         Prefetch(
             "exercises",
-            queryset=WorkoutExercise.objects.select_related(
-                "exercise"
-            ).prefetch_related(
-                Prefetch("sets", queryset=Set.objects.order_by("set_num"))
-            ).order_by("order"),
+            queryset=WorkoutExercise.objects.select_related("exercise")
+            .prefetch_related(Prefetch("sets", queryset=Set.objects.order_by("set_num")))
+            .order_by("order"),
         )
     ).get(pk=workout)
 
     if workout.date is not None:
         # Fetch the next and previous workouts by date
-        next_workout = (
-            Workout.objects.filter(date__gt=workout.date).order_by("date").first()
-        )
+        next_workout = Workout.objects.filter(date__gt=workout.date).order_by("date").first()
         if not next_workout:
             next_workout = Workout.objects.filter(date__isnull=True).first()
 
-        prev_workout = (
-            Workout.objects.filter(date__lt=workout.date).order_by("-date").first()
-        )
+        prev_workout = Workout.objects.filter(date__lt=workout.date).order_by("-date").first()
     else:
         # If workout.date is empty, there's no next workout
         next_workout = None
@@ -373,89 +408,39 @@ def finish_workout(request, workout):
 
     return redirect(reverse("workout_summary", args=(workout.pk,)))
 
+
 def workouts_index(request):
-    workout = Workout.objects.filter(completed=True).order_by('-date').first()
+    workout = Workout.objects.filter(completed=True).order_by("-date").first()
     return redirect(reverse("workout_summary", args=(workout.pk,)))
 
 
 def get_exercise_summary(exercise_id):
     """Generate a workout summary showing exercise history and current progress"""
     # Get the current exercise and its category
-    wo = WorkoutExercise.objects.select_related('exercise', 'workout').get(pk=exercise_id)
+    wo = WorkoutExercise.objects.select_related("exercise", "workout").get(pk=exercise_id)
     category = wo.exercise.category
-    
+
     # Get all exercises in this category for today's workout
-    category_exercises = WorkoutExercise.objects.filter(
-        workout=wo.workout,
-        exercise__category=category
-    ).select_related('exercise').order_by('order')
-    
+    category_exercises = (
+        WorkoutExercise.objects.filter(workout=wo.workout, exercise__category=category)
+        .select_related("exercise")
+        .order_by("order")
+    )
+
     narrative = []
     narrative.append(f"== {Exercise.get_category_name(category)} ==")
     narrative.append(f"Currently on: {wo.exercise.name}")
     narrative.append("")  # Blank line
-    
-    # First, add the current exercise information
-    narrative.append(f"* {wo.exercise.name} *")
-    
-    # Get previous workouts for this exercise
-    previous_sets = Set.objects.filter(
-        exercise__exercise=wo.exercise,
-        exercise__workout__completed=True
-    ).order_by('-exercise__workout__date')
-    
-    # Group by workout date
-    prev_dates = {}
-    for set in previous_sets:
-        date = set.exercise.workout.date
-        if date not in prev_dates:
-            prev_dates[date] = []
-        prev_dates[date].append(set)
-    prev_dates = dict(sorted(list(prev_dates.items())[:2], reverse=True))  # Last 2 dates
 
-    # Show previous attempts
-    if prev_dates:
-        for date, sets in prev_dates.items():
-            days_ago = (timezone.now().date() - date).days
-            sets_formatted = []
-            for s in sorted(sets, key=lambda x: x.set_num):
-                set_info = f"Set {s.set_num}: {s.render()}"
-                if s.note:
-                    set_info += f" ({s.note})"
-                sets_formatted.append(set_info)
-            sets_str = "; ".join(sets_formatted)
-            narrative.append(f"{days_ago} days ago: {sets_str}")
-    else:
-        narrative.append("No previous attempts")
-    
-    # Show today's progress
-    today_sets = Set.objects.filter(exercise=wo).order_by('set_num')
-    if today_sets:
-        sets_formatted = []
-        for s in today_sets:
-            set_info = f"Set {s.set_num}: {s.render()}"
-            if s.note:
-                set_info += f" ({s.note})"
-            sets_formatted.append(set_info)
-        narrative.append("Today: " + "; ".join(sets_formatted))
-    else:
-        narrative.append("Today: Not started yet")
-    narrative.append("")  # Blank line between exercises
-    
-    # Add other exercises in the category
+    # Show history and today's progress for each exercise
     for exercise in category_exercises:
-        # Skip the current exercise since we've already added it
-        if exercise.id == wo.id:
-            continue
-            
         narrative.append(f"* {exercise.exercise.name} *")
 
         # Get previous workouts for this exercise
         previous_sets = Set.objects.filter(
-            exercise__exercise=exercise.exercise,
-            exercise__workout__completed=True
-        ).order_by('-exercise__workout__date')
-        
+            exercise__exercise=exercise.exercise, exercise__workout__completed=True
+        ).order_by("-exercise__workout__date")
+
         # Group by workout date
         prev_dates = {}
         for set in previous_sets:
@@ -469,48 +454,116 @@ def get_exercise_summary(exercise_id):
         if prev_dates:
             for date, sets in prev_dates.items():
                 days_ago = (timezone.now().date() - date).days
-                sets_formatted = []
-                for s in sorted(sets, key=lambda x: x.set_num):
-                    set_info = f"Set {s.set_num}: {s.render()}"
-                    if s.note:
-                        set_info += f" ({s.note})"
-                    sets_formatted.append(set_info)
-                sets_str = "; ".join(sets_formatted)
+                sets_str = "; ".join(f"Set {s.set_num}: {s.render()}" for s in sorted(sets, key=lambda x: x.set_num))
                 narrative.append(f"{days_ago} days ago: {sets_str}")
         else:
             narrative.append("No previous attempts")
-        
+
         # Show today's progress
-        today_sets = Set.objects.filter(exercise=exercise).order_by('set_num')
-        if today_sets:
-            sets_formatted = []
-            for s in today_sets:
-                set_info = f"Set {s.set_num}: {s.render()}"
-                if s.note:
-                    set_info += f" ({s.note})"
-                sets_formatted.append(set_info)
-            narrative.append("Today: " + "; ".join(sets_formatted))
-        else:
-            narrative.append("Today: Not started yet")
+        today_sets = Set.objects.filter(exercise=exercise).order_by("set_num")
+        narrative.append(
+            "Today: "
+            + ("; ".join(f"Set {s.set_num}: {s.render()}" for s in today_sets) if today_sets else "Not started yet")
+        )
         narrative.append("")  # Blank line between exercises
-    
+
     return narrative
 
 
 def generate_coach_stream(exercise_id):
     """Generate SSE events for coach response"""
     from .coach import get_coach_response
+
     summary_lines = get_exercise_summary(exercise_id)
     for text in get_coach_response(summary_lines):
-        yield f"data: {text}\n\n"
+        # Replace actual newlines with a special token our JavaScript can interpret
+        formatted_text = text.replace("\n", "||NEWLINE||")
+        yield f"data: {formatted_text}\n\n"
 
 
 def coach_stream(request, exercise):
     response = StreamingHttpResponse(
-        streaming_content=generate_coach_stream(exercise),
-        content_type='text/event-stream'
+        streaming_content=generate_coach_stream(exercise), content_type="text/event-stream"
     )
-    response['Cache-Control'] = 'no-cache'
-    response['X-Accel-Buffering'] = 'no'
+    response["Cache-Control"] = "no-cache"
+    response["X-Accel-Buffering"] = "no"
     return response
 
+
+def generate_trainer_summary_stream(category, workout_id=None):
+    """Generate SSE events for trainer category summary"""
+    from .coach import get_trainer_summary
+
+    # Get workout data - same logic as summarize_category view
+    if workout_id:
+        try:
+            workout = Workout.objects.get(pk=workout_id)
+        except Workout.DoesNotExist:
+            yield f"data: No workout found with ID {workout_id}\n\n"
+            return
+    else:
+        try:
+            workout = Workout.objects.get(completed=False)
+        except Workout.DoesNotExist:
+            yield f"data: No active workout found\n\n"
+            return
+
+    # Get exercises for this category
+    exercises = workout.exercises.filter(exercise__category=category).order_by("order")
+    if not exercises.exists():
+        yield f"data: No exercises found for category {category}\n\n"
+        return
+
+    # Format exercise data for the trainer
+    exercise_data = []
+    for exercise in exercises:
+        current_sets = list(map(lambda s: s.render(), exercise.sets.all().order_by("set_num")))
+
+        # Get previous workout data for comparison
+        if workout.completed:
+            last_workout = (
+                Workout.objects.filter(completed=True, exercises__exercise=exercise.exercise, date__lt=workout.date)
+                .order_by("-date")
+                .first()
+            )
+        else:
+            last_workout = (
+                Workout.objects.filter(completed=True, exercises__exercise=exercise.exercise).order_by("-date").first()
+            )
+
+        last_sets = []
+        last_exercise = None
+        if last_workout:
+            try:
+                last_exercise = WorkoutExercise.objects.get(workout=last_workout, exercise=exercise.exercise)
+                last_sets = list(
+                    map(lambda s: s.render(), Set.objects.filter(exercise=last_exercise).order_by("set_num"))
+                )
+            except WorkoutExercise.DoesNotExist:
+                pass
+
+        exercise_data.append(
+            {
+                "exercise": exercise,
+                "current_sets": current_sets,
+                "last_sets": last_sets,
+                "last_workout": last_workout,
+                "last_exercise": last_exercise,  # Add the last_exercise object to provide access to its sets
+            }
+        )
+
+    # Stream the trainer's analysis
+    for text in get_trainer_summary(exercise_data):
+        # Replace actual newlines with a special token our JavaScript can interpret
+        formatted_text = text.replace("\n", "||NEWLINE||")
+        yield f"data: {formatted_text}\n\n"
+
+
+def trainer_summary_stream(request, category, workout_id=None):
+    """Endpoint for streaming trainer summary for a workout category"""
+    response = StreamingHttpResponse(
+        streaming_content=generate_trainer_summary_stream(category, workout_id), content_type="text/event-stream"
+    )
+    response["Cache-Control"] = "no-cache"
+    response["X-Accel-Buffering"] = "no"
+    return response

@@ -4,9 +4,47 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ category }}</title>
+  <title>{{ category }} Summary</title>
   {% load static %}
   <link rel="stylesheet" href="{% static 'css/output.css' %}">
+  <style>
+    .trainer-container {
+      position: relative;
+      min-height: 120px;
+    }
+    .loading-indicator {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+    }
+    .dots {
+      display: flex;
+    }
+    .dot {
+      margin: 0 4px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #3B82F6;
+      animation: pulse 1.5s infinite ease-in-out;
+    }
+    .dot:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    .dot:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+    @keyframes pulse {
+      0% { transform: scale(0.8); opacity: 0.6; }
+      50% { transform: scale(1.2); opacity: 1; }
+      100% { transform: scale(0.8); opacity: 0.6; }
+    }
+  </style>
 </head>
 
 <body class="bg-gray-100">
@@ -15,7 +53,30 @@
       <div class="relative px-4 py-10 bg-white shadow-lg sm:rounded-3xl sm:p-20">
         <div class="flex justify-between items-center mb-4">
           <h1 class="text-2xl font-semibold">{{ category }}</h1>
+          <div class="text-sm text-gray-500">
+            {% if is_past_workout %}
+              {{ workout.date|date:"F j, Y" }}
+            {% else %}
+              Current Workout
+            {% endif %}
+          </div>
         </div>
+        
+        <!-- AI Trainer Analysis - Only show for completed workouts or non-preview views -->
+        {% if is_past_workout or request.resolver_match.url_name != 'preview_category' %}
+        <div class="mb-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <div id="trainer-container" class="trainer-container text-sm text-blue-800">
+            <div id="trainer-output"></div>
+            <div id="loading-indicator" class="loading-indicator">
+              <div class="dots">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endif %}
 
         {% for exercise in exercises %}
         <h1 class="text-2xl font-semibold">{{ exercise.exercise.name }}</h1>
@@ -23,13 +84,23 @@
           <thead class="rounded-lg bg-gray-200">
             <tr>
               {% if exercise.current_sets %}
-              <th class="px-4 py-2 w-1/2">Current Workout</th>
+              <th class="px-4 py-2 w-1/2">
+                {% if is_past_workout %}
+                  This Workout
+                {% else %}
+                  Current Workout
+                {% endif %}
+              </th>
               {% endif %}
               <th class="px-4 py-2 {% if exercise.current_sets %}w-1/2{% else %}w-full{% endif %}">
                 {% if exercise.last_workout %}
-                {{ exercise.last_workout.date|timesince }} Ago
+                  {% if is_past_workout %}
+                    {{ exercise.last_workout.date|date:"M j, Y" }}
+                  {% else %}
+                    {{ exercise.last_workout.date|timesince }} Ago
+                  {% endif %}
                 {% else %}
-                --
+                  No Previous Data
                 {% endif %}
               </th>
             </tr>
@@ -59,16 +130,93 @@
           </tbody>
         </table>
         {% endfor %}
+
+        {% if is_past_workout %}
+        <!-- Navigation for past workouts -->
+        <div class="flex items-center justify-between mt-6">
+          {% if prev_workout %}
+          <a href="{% url 'summarize_category_past' category_code prev_workout.id %}"
+            class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">
+            &larr; Previous ({{ prev_workout.date|date:"M j, Y" }})
+          </a>
+          {% else %}
+          <div></div>
+          {% endif %}
+
+          {% if next_workout %}
+          <a href="{% url 'summarize_category_past' category_code next_workout.id %}"
+            class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">
+            Next ({{ next_workout.date|date:"M j, Y" }}) &rarr;
+          </a>
+          {% else %}
+          <a href="{% url 'summarize_category' category_code %}" 
+             class="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded">
+            Current Workout &rarr;
+          </a>
+          {% endif %}
+        </div>
+        {% else %}
+        <!-- Navigation for current workout flow -->
         <div class="flex items-center justify-between">
           {% if prev_url %}
           <a href="{{ prev_url | safe }}"
             class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Back</a>
+          {% else %}
+          <div></div>
           {% endif %}
+          
+          {% if next_url %}
           <a href="{{ next_url | safe }}"
             class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Next</a>
+          {% endif %}
         </div>
+        {% endif %}
       </div>
     </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const trainerOutput = document.getElementById('trainer-output');
+      const loadingIndicator = document.getElementById('loading-indicator');
+      
+      // Only initialize trainer if the container exists
+      // (it won't exist in preview mode due to our conditional)
+      if (trainerOutput && loadingIndicator) {
+        // URL for the SSE stream
+        {% if is_past_workout %}
+        const eventSource = new EventSource('{% url "trainer_summary_stream_past" category_code workout.id %}');
+        {% else %}
+        const eventSource = new EventSource('{% url "trainer_summary_stream" category_code %}');
+        {% endif %}
+        
+        // Handle incoming messages
+        let fullText = '';
+        
+        eventSource.onmessage = function(event) {
+          // Hide the loading indicator after receiving data
+          loadingIndicator.style.display = 'none';
+          
+          // Add text to our buffer 
+          if (event.data) {
+            fullText += event.data;
+            
+            // Replace our special newline token with HTML line breaks
+            const formattedText = fullText.replace(/\|\|NEWLINE\|\|/g, '<br>');
+            
+            // Update the content with the complete text so far
+            trainerOutput.innerHTML = formattedText;
+          }
+        };
+        
+        // Handle errors
+        eventSource.onerror = function(error) {
+          loadingIndicator.style.display = 'none';
+          eventSource.close();
+        };
+      }
+    });
+  </script>
 </body>
 
 </html>

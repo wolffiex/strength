@@ -145,7 +145,10 @@
     let currentText = '';
 
     evtSource.onmessage = function(event) {
-      currentText += event.data + '\n';
+      // Replace our special newline token with actual newlines
+      const formattedText = event.data.replace(/\|\|NEWLINE\|\|/g, '\n');
+      // Don't add extra newlines, just add the text as it comes
+      currentText += formattedText;
       coachBox.textContent = currentText;
     };
 
