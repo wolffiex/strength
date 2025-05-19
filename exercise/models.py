@@ -99,7 +99,7 @@ class Set(models.Model):
             rendering += " ea side"
         if self.pounds:
             rendering += f" x {self.pounds} lbs"
-        if self.duration_secs:
+        if self.duration_secs is not None:
             mins = self.duration_secs // 60
             secs = self.duration_secs % 60
             rendering += f" ({mins:02d}:{secs:02d})"

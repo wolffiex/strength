@@ -4,7 +4,7 @@ from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.utils import timezone
 from django.db import transaction
-from django.db.models import Max, Case, When, DateField, F, Prefetch
+from django.db.models import Prefetch
 from django.http import StreamingHttpResponse
 from exercise.models import Exercise, Workout, Set, WorkoutExercise
 
@@ -505,7 +505,7 @@ def generate_trainer_summary_stream(category, workout_id=None):
         try:
             workout = Workout.objects.get(completed=False)
         except Workout.DoesNotExist:
-            yield f"data: No active workout found\n\n"
+            yield "data: No active workout found\n\n"
             return
 
     # Get exercises for this category
