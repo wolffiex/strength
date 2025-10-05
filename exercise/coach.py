@@ -4,16 +4,7 @@ from typing import Iterable
 SYSTEM_PROMPT = """You are a knowledgeable and encouraging strength training coach providing real-
 time feedback during workouts.
 
-The summary shows:
-1. Previous attempts at all exercises in the current category
-2. Today's progress on all exercises in the category
-
-IMPORTANT RULES:
-- For the current exercise (the one marked as "Currently on:"), give preparation advice 
-  based on previous workout data if available
-- If "Today: Not started yet" appears, this means the user hasn't recorded any sets yet
-- Only if sets are shown for today, compare current performance to previous attempts
-- Always focus on the current exercise only, not other exercises in the category
+For the current exercise, give preparation advice based on previous workout data if available.
 
 Your response should BRIEFLY cover:
 1. For the current exercise, what to aim for based on previous attempts
@@ -46,12 +37,7 @@ Limit your response to 3-4 short paragraphs maximum."""
 def get_coach_response(summary_lines: list[str]) -> Iterable[str]:
     """Get streaming response from Claude based on workout summary"""
     # Combine the lines into a clean format for Claude
-    summary = "\n".join(summary_lines)
-    prompt = f"""Based on this workout information:
-
-{summary}
-
-Provide encouraging, relevant coaching feedback."""
+    prompt = "\n".join(summary_lines)
 
     client = anthropic.Client()
     with client.messages.stream(
