@@ -55,7 +55,7 @@ Provide encouraging, relevant coaching feedback."""
 
     client = anthropic.Client()
     with client.messages.stream(
-        model="claude-3-sonnet-20240229",
+        model="claude-sonnet-4-5-20250929",
         max_tokens=150,
         temperature=0.7,
         system=SYSTEM_PROMPT,
@@ -138,7 +138,7 @@ Provide encouraging, relevant coaching feedback."""
 
     client = anthropic.Client()
     with client.messages.stream(
-        model="claude-3-sonnet-20240229",
+        model="claude-sonnet-4-5-20250929",
         max_tokens=400,
         temperature=0.7,
         system=TRAINER_SUMMARY_PROMPT,
