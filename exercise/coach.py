@@ -15,25 +15,31 @@ Your response should BRIEFLY cover:
 Keep feedback concise, encouraging, and immediately actionable.
 Write in clear sentences that make sense as they appear."""
 
-TRAINER_SUMMARY_PROMPT = """You are a knowledgeable strength training coach providing a summary analysis 
-of a workout category.
+TRAINER_SUMMARY_PROMPT = """You are a knowledgeable strength training coach providing a warm, encouraging
+summary for one workout category.
 
-The data shows:
-1. The just-completed super-set
-2. Current workout performance for each exercise
-3. Previous workout performance for comparison
-3. Notes about each exercise if given
+Write in a supportive, non-judgmental tone. Assume good intent and normal variability in training.
 
-Your task is to provide a brief but insightful summary that includes:
-1. Overall performance compared to previous workouts
-2. Highlight exercises with notable improvement or regression
-3. Identify any patterns across the exercises
-4. One specific actionable suggestion to improve this category next time
-5. Comment on pace, but remember that technical issues or data entry problems may cloud the picture,
-especially if the timing or reps/weights seem off.
+You are given:
+- Multiple exercises within a category
+- Today’s sets and the most recent prior sets for comparison
+- Any notes provided for sets
 
-Be positive, concise, encouraging, data-driven, and provide specific observations when possible.
-Limit your response to 3-4 short paragraphs maximum."""
+Goals:
+- Start by celebrating at least one tangible win from today.
+- When numbers differ from last time, use neutral language (“today looked lighter/different”) and offer plausible reasons (equipment change, fatigue, logging differences, pace).
+- Fold in relevant notes when they help explain differences.
+- Offer one small, specific next step or option set (e.g., “if dips felt heavy, try assisted dips or 3×5 negatives”).
+- If pace seems off, gently suggest a rest guideline.
+- End with a short, encouraging line that looks forward.
+
+Avoid:
+- Alarmist words like “concerning”, “regressed”, “declined”, or blame.
+- Overstating certainty; prefer may/might/could.
+
+Format:
+- 2–3 short paragraphs, or 1 short paragraph plus 2–3 compact bullets.
+- Keep it concise, actionable, and kind."""
 
 
 def get_coach_response(summary_lines: list[str]) -> Iterable[str]:
@@ -73,6 +79,8 @@ def build_trainer_summary_prompt(category_data: list[dict]) -> str:
     summary_lines: list[str] = []
     summary_lines.append("# Category Summary")
 
+    # Notes are single-line; append inline if present
+
     for exercise_info in category_data:
         exercise = exercise_info["exercise"]
         current_sets = exercise_info["current_sets"]
@@ -85,14 +93,14 @@ def build_trainer_summary_prompt(category_data: list[dict]) -> str:
         summary_lines.append("Current workout:")
         if current_sets:
             for i, set_str in enumerate(current_sets, 1):
-                # Get the set object to check for duration_secs
+                # Get the set object to check for notes
                 set_obj = exercise.sets.filter(set_num=i).first()
-                time_info = ""
-                if set_obj and set_obj.duration_secs:
-                    mins = set_obj.duration_secs // 60
-                    secs = set_obj.duration_secs % 60
-                    time_info = f" (completed in {mins:02d}:{secs:02d})"
-                summary_lines.append(f"  Set {i}: {set_str}{time_info}")
+                note_info = ""
+                if set_obj and set_obj.note:
+                    note_text = str(set_obj.note).strip()
+                    if note_text:
+                        note_info = f" - Note: {note_text}"
+                summary_lines.append(f"  Set {i}: {set_str}{note_info}")
         else:
             summary_lines.append("  No sets completed")
 
@@ -102,16 +110,16 @@ def build_trainer_summary_prompt(category_data: list[dict]) -> str:
             summary_lines.append(f"  Date: {last_workout.date}")
             if last_sets:
                 for i, set_str in enumerate(last_sets, 1):
-                    # Try to get the set object to check for duration
+                    # Try to get the set object to check for notes
                     if last_workout and exercise_info.get("last_exercise"):
                         last_exercise = exercise_info["last_exercise"]
                         set_obj = last_exercise.sets.filter(set_num=i).first()
-                        time_info = ""
-                        if set_obj and set_obj.duration_secs:
-                            mins = set_obj.duration_secs // 60
-                            secs = set_obj.duration_secs % 60
-                            time_info = f" (completed in {mins:02d}:{secs:02d})"
-                        summary_lines.append(f"  Set {i}: {set_str}{time_info}")
+                        note_info = ""
+                        if set_obj and set_obj.note:
+                            note_text = str(set_obj.note).strip()
+                            if note_text:
+                                note_info = f" - Note: {note_text}"
+                        summary_lines.append(f"  Set {i}: {set_str}{note_info}")
                     else:
                         summary_lines.append(f"  Set {i}: {set_str}")
             else:
