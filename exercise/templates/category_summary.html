@@ -175,7 +175,8 @@
     </div>
   </div>
 
-  <script>
+  <script type="module">
+    import { decodeSseChunk, formatAiText } from "{% static 'js/ai_text.js' %}";
     document.addEventListener('DOMContentLoaded', function() {
       const trainerOutput = document.getElementById('trainer-output');
       const loadingIndicator = document.getElementById('loading-indicator');
@@ -192,20 +193,15 @@
         
         // Handle incoming messages
         let fullText = '';
-        
+
         eventSource.onmessage = function(event) {
           // Hide the loading indicator after receiving data
           loadingIndicator.style.display = 'none';
-          
-          // Add text to our buffer 
+
+          // Add text to our buffer
           if (event.data) {
-            fullText += event.data;
-            
-            // Replace our special newline token with HTML line breaks
-            const formattedText = fullText.replace(/\|\|NEWLINE\|\|/g, '<br>');
-            
-            // Update the content with the complete text so far
-            trainerOutput.innerHTML = formattedText;
+            fullText += decodeSseChunk(event.data);
+            trainerOutput.innerHTML = formatAiText(fullText);
           }
         };
         

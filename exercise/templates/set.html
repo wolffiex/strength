@@ -7,6 +7,7 @@
   <title>Training</title>
   {% load static %}
   <link rel="stylesheet" href="{% static 'css/output.css' %}">
+  
 </head>
 
 <body class="bg-gray-100">
@@ -116,7 +117,8 @@
       </div>
     </div>
   </div>
-  <script>
+  <script type="module">
+    import { decodeSseChunk, formatAiText } from "{% static 'js/ai_text.js' %}";
     // Start timer when page loads
     let startTime = Date.now();
     let timerInterval = setInterval(updateTimer, 1000);
@@ -144,29 +146,14 @@
     const coachBox = document.getElementById('coach-box');
     let currentText = '';
 
-    function escapeHtml(text) {
-      return text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
-    }
-
-    function formatCoachText(text) {
-      const escaped = escapeHtml(text);
-      const withBold = escaped.replace(/\*\*([\s\S]+?)\*\*/g, '<strong>$1</strong>');
-      return withBold.replace(/\n/g, '<br>');
-    }
-
     evtSource.addEventListener('coach-complete', () => {
       evtSource.close();
     });
 
     evtSource.onmessage = function(event) {
-      // Replace our special newline token with actual newlines
-      const formattedText = event.data.replace(/\|\|NEWLINE\|\|/g, '\n');
-      // Don't add extra newlines, just add the text as it comes
-      currentText += formattedText;
-      coachBox.innerHTML = formatCoachText(currentText);
+      // Decode chunk and append to buffer
+      currentText += decodeSseChunk(event.data);
+      coachBox.innerHTML = formatAiText(currentText);
     };
 
     evtSource.onerror = function() {

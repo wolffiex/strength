@@ -19,18 +19,20 @@ TRAINER_SUMMARY_PROMPT = """You are a knowledgeable strength training coach prov
 of a workout category.
 
 The data shows:
-1. Multiple exercises within a category (like 'Conditioning' or 'Main Lift')
+1. The just-completed super-set
 2. Current workout performance for each exercise
 3. Previous workout performance for comparison
+3. Notes about each exercise if given
 
 Your task is to provide a brief but insightful summary that includes:
 1. Overall performance compared to previous workouts
 2. Highlight exercises with notable improvement or regression
 3. Identify any patterns across the exercises
 4. One specific actionable suggestion to improve this category next time
-5. Comment on pace, especially if it lags
+5. Comment on pace, but remember that technical issues or data entry problems may cloud the picture,
+especially if the timing or reps/weights seem off.
 
-Be concise, encouraging, data-driven, and provide specific observations when possible.
+Be positive, concise, encouraging, data-driven, and provide specific observations when possible.
 Limit your response to 3-4 short paragraphs maximum."""
 
 
@@ -53,20 +55,22 @@ def get_coach_response(summary_lines: list[str]) -> Iterable[str]:
                 yield message.text
 
 
-def get_trainer_summary(category_data: list[dict]) -> Iterable[str]:
-    """Get streaming category analysis from Claude based on workout data
+def build_trainer_summary_prompt(category_data: list[dict]) -> str:
+    """Build the user prompt string used for trainer category summary.
 
     Args:
         category_data: List of dictionaries containing exercise data with structure:
             {
                 "exercise": WorkoutExercise instance,
-                "current_sets": List of rendered set strings for current workout,
-                "last_sets": List of rendered set strings from previous workout,
-                "last_workout": Previous Workout instance or None
+                "current_sets": List[str],
+                "last_sets": List[str],
+                "last_workout": Previous Workout instance or None,
+                "last_exercise": WorkoutExercise instance or None,
             }
+    Returns:
+        The user prompt string that will be sent along with TRAINER_SUMMARY_PROMPT.
     """
-    # Format the data in a clear way for Claude
-    summary_lines = []
+    summary_lines: list[str] = []
     summary_lines.append("# Category Summary")
 
     for exercise_info in category_data:
@@ -121,6 +125,12 @@ def get_trainer_summary(category_data: list[dict]) -> Iterable[str]:
 {summary}
 
 Provide encouraging, relevant coaching feedback."""
+    return prompt
+
+
+def get_trainer_summary(category_data: list[dict]) -> Iterable[str]:
+    """Get streaming category analysis from Claude based on workout data"""
+    prompt = build_trainer_summary_prompt(category_data)
 
     client = anthropic.Client()
     with client.messages.stream(
