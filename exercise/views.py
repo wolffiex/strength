@@ -477,6 +477,9 @@ def generate_coach_stream(exercise_id):
         formatted_text = text.replace("\n", "||NEWLINE||")
         yield f"data: {formatted_text}\n\n"
 
+    # Let the browser know the stream finished so it can stop reconnect attempts
+    yield "event: coach-complete\ndata: done\n\n"
+
 
 def coach_stream(request, exercise):
     response = StreamingHttpResponse(

@@ -157,6 +157,10 @@
       return withBold.replace(/\n/g, '<br>');
     }
 
+    evtSource.addEventListener('coach-complete', () => {
+      evtSource.close();
+    });
+
     evtSource.onmessage = function(event) {
       // Replace our special newline token with actual newlines
       const formattedText = event.data.replace(/\|\|NEWLINE\|\|/g, '\n');
