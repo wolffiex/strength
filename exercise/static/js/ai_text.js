@@ -19,10 +19,10 @@ function applyHeadings(text) {
   for (const line of lines) {
     if (/^\s*##\s+/.test(line)) {
       const content = line.replace(/^\s*##\s+/, '');
-      out.push(`<div class=\"ai-h2\"><strong>${content}</strong></div>`);
+      out.push(`<div class=\"text-base font-semibold my-1\">${content}</div>`);
     } else if (/^\s*#\s+/.test(line)) {
       const content = line.replace(/^\s*#\s+/, '');
-      out.push(`<div class=\"ai-h1\"><strong>${content}</strong></div>`);
+      out.push(`<div class=\"text-lg font-bold my-2\">${content}</div>`);
     } else {
       out.push(line);
     }
