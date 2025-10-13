@@ -205,6 +205,13 @@
           }
         };
         
+        // Close stream on completion event to avoid reconnection attempts
+        eventSource.addEventListener('trainer-complete', function() {
+          // Ensure final buffer render before closing
+          trainerOutput.innerHTML = formatAiText(fullText);
+          eventSource.close();
+        });
+        
         // Handle errors
         eventSource.onerror = function(error) {
           loadingIndicator.style.display = 'none';

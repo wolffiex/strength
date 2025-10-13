@@ -147,6 +147,8 @@
     let currentText = '';
 
     evtSource.addEventListener('coach-complete', () => {
+      // Ensure final buffer render before closing
+      coachBox.innerHTML = formatAiText(currentText);
       evtSource.close();
     });
 

@@ -55,10 +55,8 @@ def get_coach_response(summary_lines: list[str]) -> Iterable[str]:
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": prompt}],
     ) as stream:
-        for message in stream:
-            if hasattr(message, "text"):
-                # Just yield the text directly without buffering or chunking
-                yield message.text
+        for text in stream.text_stream:
+            yield text
 
 
 def build_trainer_summary_prompt(category_data: list[dict]) -> str:
@@ -148,7 +146,5 @@ def get_trainer_summary(category_data: list[dict]) -> Iterable[str]:
         system=TRAINER_SUMMARY_PROMPT,
         messages=[{"role": "user", "content": prompt}],
     ) as stream:
-        for message in stream:
-            if hasattr(message, "text"):
-                # Just yield the text directly without buffering or chunking
-                yield message.text
+        for text in stream.text_stream:
+            yield text

@@ -557,6 +557,9 @@ def generate_trainer_summary_stream(category, workout_id=None):
         formatted_text = text.replace("\n", "||NEWLINE||")
         yield f"data: {formatted_text}\n\n"
 
+    # Signal completion so the browser can close the stream cleanly
+    yield "event: trainer-complete\ndata: done\n\n"
+
 
 def trainer_summary_stream(request, category, workout_id=None):
     """Endpoint for streaming trainer summary for a workout category"""
