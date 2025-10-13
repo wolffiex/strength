@@ -473,9 +473,10 @@ def generate_coach_stream(exercise_id):
 
     summary_lines = get_exercise_summary(exercise_id)
     for text in get_coach_response(summary_lines):
-        # Replace actual newlines with a special token our JavaScript can interpret
-        formatted_text = text.replace("\n", "||NEWLINE||")
-        yield f"data: {formatted_text}\n\n"
+        # Send multiline SSE events per spec: one data: line per text line
+        for line in text.split("\n"):
+            yield f"data: {line}\n"
+        yield "\n"
 
     # Let the browser know the stream finished so it can stop reconnect attempts
     yield "event: coach-complete\ndata: done\n\n"
@@ -553,9 +554,10 @@ def generate_trainer_summary_stream(category, workout_id=None):
 
     # Stream the trainer's analysis
     for text in get_trainer_summary(exercise_data):
-        # Replace actual newlines with a special token our JavaScript can interpret
-        formatted_text = text.replace("\n", "||NEWLINE||")
-        yield f"data: {formatted_text}\n\n"
+        # Send multiline SSE events per spec: one data: line per text line
+        for line in text.split("\n"):
+            yield f"data: {line}\n"
+        yield "\n"
 
     # Signal completion so the browser can close the stream cleanly
     yield "event: trainer-complete\ndata: done\n\n"

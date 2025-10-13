@@ -50,7 +50,7 @@ def get_coach_response(summary_lines: list[str]) -> Iterable[str]:
     client = anthropic.Client()
     with client.messages.stream(
         model="claude-sonnet-4-5-20250929",
-        max_tokens=150,
+        max_tokens=300,
         temperature=0.7,
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": prompt}],
@@ -141,7 +141,7 @@ def get_trainer_summary(category_data: list[dict]) -> Iterable[str]:
     client = anthropic.Client()
     with client.messages.stream(
         model="claude-sonnet-4-5-20250929",
-        max_tokens=400,
+        max_tokens=600,
         temperature=0.7,
         system=TRAINER_SUMMARY_PROMPT,
         messages=[{"role": "user", "content": prompt}],
